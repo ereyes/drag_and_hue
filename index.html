@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:image" content="drag_and_hue_poster.jpg" />
+    <meta property="og:image:width" content="1000"/>
+    <meta property="og:image:height" content="527"/>
+    <title>Drag & Hue: a series of simple tools to visualize visual images.</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .title {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 4em;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .title span {
+            color: tomato;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1000px;
+            padding: 20px;
+        }
+        .image-link {
+            margin: 10px;
+        }
+        .image-link img {
+            max-width: 150px;
+            max-height: 150px;
+            display: block;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .image-link p {
+            margin: 0;
+            text-align: center;
+        }
+
+        /* Ensure title visibility on smaller screens */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2em;
+            }
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #222;
+            color: white;
+            width: 100%;
+            margin-top: auto;
+            font-size: 80%;
+        }
+        footer a {
+            color: tomato;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="title">
+        Drag & <span>Hue</span>
+    </div>
+
+    <div class="subtitle">
+        A series of simple drag and drop tools to visualize visual images.
+    </div>
+
+    <div class="container">
+        <div class="image-link">
+            <a href="01_listmaker.html">
+                <img src="listmaker.jpg" alt="Listmaker Image">
+            </a>
+            <p>Listmaker</p>
+        </div>
+
+        <div class="image-link">
+            <a href="02_drag_and_mosaic.html">
+                <img src="drag_and_mosaic.jpg" alt="Mosaic Image">
+            </a>
+            <p>Mosaic</p>
+        </div>
+
+        <div class="image-link">
+            <a href="03_drag_and_bars.html">
+                <img src="drag_and_bars.jpg" alt="Bars Image">
+            </a>
+            <p>Bars</p>
+        </div>
+
+        <div class="image-link">
+            <a href="04_drag_and_plot.html">
+                <img src="drag_and_plot.jpg" alt="Plot Image">
+            </a>
+            <p>Plot</p>
+        </div>
+
+        <div class="image-link">
+            <a href="05_drag_and_circles.html">
+                <img src="drag_and_circles.jpg" alt="Circles Image">
+            </a>
+            <p>Circles</p>
+        </div>
+
+        <div class="image-link">
+            <a href="06_drag_and_voronoi.html">
+                <img src="drag_and_voronoi.jpg" alt="Voronoi Image">
+            </a>
+            <p>Voronoi</p>
+        </div>
+
+        <div class="image-link">
+            <a href="07_drag_and_cone.html">
+                <img src="drag_and_cone.jpg" alt="Cone Image">
+            </a>
+            <p>Cone</p>
+        </div>
+    </div>
+
+    <footer>
+        <p><a href="http://ereyes.net">E. Reyes</a>, Paris, 2024. </p>
+        <p>This tool is for scientific and educational purposes only. This site does not track your data.</p>
+    </footer>
+
+</body>
+</html>

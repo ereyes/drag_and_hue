@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple Image Upload with Dominant Colors</title>
+    <style>
+        * { box-sizing: border-box;}
+        #welcome {
+            width:250px;
+            float:left;
+            margin-left: 20px;
+        }
+        #welcome p {
+            color:#888;
+        }
+        #drop-zone {
+            width: 270px;
+            height:250px;
+            border: 2px dashed #ccc;
+            margin-left: 50px;
+            margin-top: 30px;
+            text-align: left;
+            line-height: 30px;
+            padding:2em;
+            float: left;
+        }
+        #drop-zone.dragover {
+            border-color: #333;
+            color: #333;
+        }
+        #file-input {
+            display: none;
+        }
+        .color-circle {
+            position: absolute;
+            border-radius: 50%;
+        }
+        .preview {
+            position: absolute;
+            display: none;
+            max-width: 200px;
+            max-height: 200px;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+<div id="instructions">
+    <div id="welcome">
+        <h1>Drag & <span style="color: tomato;">Circles</span> </h1>
+        <p>A simple drag and drop tool to plot a series of image files a colored circles.</p>
+        <p>Color mode is RGB. The inner circle represents the dominant color.</p>
+        <p>The color of the border represents the secondary color.</p>
+    </div>
+    <div id="drop-zone">Drag & Drop images here or <button onclick="document.getElementById('file-input').click()">Select Files</button></div>
+</div>
+
+<input type="file" id="file-input" multiple accept="image/*">
+<div id="color-circles"></div>
+<img id="preview" class="preview" alt="Image Preview">
+
+<!-- Include Color Thief library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const colorCirclesContainer = document.getElementById('color-circles');
+    const preview = document.getElementById('preview');
+    const colorThief = new ColorThief();
+    const circles = [];
+
+    const getDominancePercentage = (img, color) => {
+
+        document.getElementsByTagName('body')[0].style.backgroundColor = "#eee";
+        document.getElementById('instructions').style.display = "none";
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        context.drawImage(img, 0, 0, img.width, img.height);
+
+        const imageData = context.getImageData(0, 0, img.width, img.height);
+        const data = imageData.data;
+        let matchCount = 0;
+        
+        for (let i = 0; i < data.length; i += 4) {
+            if (
+                data[i] === color[0] &&
+                data[i + 1] === color[1] &&
+                data[i + 2] === color[2]
+            ) {
+                matchCount++;
+            }
+        }
+
+        return (matchCount / (data.length / 4)) * 100;
+    };
+
+    const doesOverlap = (circle, x, y, diameter) => {
+        for (let existingCircle of circles) {
+            const distance = Math.sqrt(
+                Math.pow(existingCircle.x - x, 2) + Math.pow(existingCircle.y - y, 2)
+            );
+            if (distance < (existingCircle.diameter / 2) + (diameter / 2)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    const handleFiles = (files) => {
+        Array.from(files).forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const dominantColors = colorThief.getPalette(img, 2);
+                        const mostDominantColor = dominantColors[0];
+                        const secondDominantColor = dominantColors[1];
+
+                        const dominancePercentage1 = getDominancePercentage(img, mostDominantColor);
+                        const dominancePercentage2 = getDominancePercentage(img, secondDominantColor);
+                        const diameter = Math.max(35, Math.min(100, dominancePercentage1 * 1000)); // Adjusting the diameter based on dominance percentage of the most dominant color
+                        const borderWidth = Math.max(7, Math.min(20, dominancePercentage2 * 500)); // Adjusting the border width based on dominance percentage of the second dominant color
+
+                        let x, y;
+                        do {
+                            x = Math.random() * (window.innerWidth - diameter);
+                            y = Math.random() * (window.innerHeight - diameter);
+                        } while (doesOverlap({x, y, diameter}, x, y, diameter));
+
+                        const circle = document.createElement('div');
+                        circle.className = 'color-circle';
+                        circle.style.backgroundColor = `rgb(${mostDominantColor[0]}, ${mostDominantColor[1]}, ${mostDominantColor[2]})`;
+                        circle.style.border = `${borderWidth}px solid rgb(${secondDominantColor[0]}, ${secondDominantColor[1]}, ${secondDominantColor[2]})`;
+                        circle.style.width = `${diameter}px`;
+                        circle.style.height = `${diameter}px`;
+                        circle.style.top = `${y}px`;
+                        circle.style.left = `${x}px`;
+
+                        circles.push({x, y, diameter});
+
+                        circle.addEventListener('mouseover', () => {
+                            preview.src = img.src;
+                            preview.style.display = 'block';
+                            preview.style.top = `${circle.offsetTop + diameter / 2}px`;
+                            preview.style.left = `${circle.offsetLeft + diameter / 2}px`;
+                        });
+
+                        circle.addEventListener('mouseout', () => {
+                            preview.style.display = 'none';
+                        });
+
+                        colorCirclesContainer.appendChild(circle);
+                    };
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please drop an image file.');
+            }
+        });
+    };
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', () => {
+        handleFiles(fileInput.files);
+    });
+</script>
+
+</body>
+</html>

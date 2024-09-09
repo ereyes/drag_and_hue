@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Voronoi Diagramer</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        * { box-sizing: border-box;}
+
+        #welcome {
+            width:250px;
+            float:left;
+            margin-left: 20px;
+        }
+        #welcome p {
+            color:#888;
+        }
+        #drop-zone {
+            width: 270px;
+            height:250px;
+            border: 2px dashed #ccc;
+            margin-left: 50px;
+            margin-top: 30px;
+            text-align: left;
+            line-height: 30px;
+            padding:2em;
+            float: left;
+        }
+        #drop_zone {
+            width: 100%;
+            height: 200px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #file-input {
+            display: none;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 999;
+        }
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">
+
+        <div id="welcome">
+            <h1>Drag & <span style="color: tomato;">Voronoi</span> </h1>
+            <p>A simple drag and drop tool to generate a Voronoi diagram from a series of image files.</p>
+            <p>Colors are the most representatives of each image, expressed in HSL color mode.</p>
+        </div>
+        <div id="drop-zone">
+            <span>Drag & Drop Images Here</span>
+            <input type="file" id="file-input" multiple>
+            <button id="select-files">Select Files</button>
+        </div>
+    </div>
+
+    <div id="spinner">
+        <img src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/0.16.1/images/loader-large.gif" alt="Spinner">
+    </div>
+    <script>
+        let pointsCount = 0;
+        let svg;
+        const spinner = document.getElementById('spinner');
+
+        // Function to handle file drop
+        function handleFileDrop(event) {
+            event.preventDefault();
+            const files = event.dataTransfer.files;
+            pointsCount = files.length;
+            showSpinner();
+            generateVoronoiDiagram(Array.from(files));
+        }
+
+        // Function to handle file selection via button
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            pointsCount = files.length;
+            showSpinner();
+            generateVoronoiDiagram(Array.from(files));
+        }
+
+        // Function to show spinner
+        function showSpinner() {
+            spinner.style.display = 'block';
+        }
+
+        // Function to hide spinner
+        function hideSpinner() {
+            spinner.style.display = 'none';
+        }
+
+        // Function to generate Voronoi diagram
+        function generateVoronoiDiagram(files) {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            const promises = [];
+            files.forEach(file => {
+                promises.push(new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = new Image();
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            const color = getDominantColor(imageData);
+                            resolve(color);
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }));
+            });
+
+            Promise.all(promises).then(colors => {
+                // Sort colors
+                colors.sort((a, b) => a.localeCompare(b));
+
+                const points = d3.range(pointsCount).map(() => [Math.random() * width, Math.random() * height]);
+
+                const voronoi = d3.voronoi()
+                    .extent([[0, 0], [width, height]]);
+
+                const diagram = voronoi(points);
+
+                if (!svg) {
+                    svg = d3.select("body").append("svg")
+                        .attr("width", width)
+                        .attr("height", height);
+                } else {
+                    svg.selectAll("*").remove(); // Clear existing content
+                }
+
+                svg.selectAll("path")
+                    .data(diagram.polygons())
+                    .enter().append("path")
+                    .attr("fill", (d, i) => colors[i])
+                    .attr("stroke", "black")
+                    .attr("d", d => d ? "M" + d.join("L") + "Z" : null);
+
+                svg.selectAll("circle")
+                    .data(points)
+                    .enter().append("circle")
+                    .attr("r", 2)
+                    .attr("cx", d => d[0])
+                    .attr("cy", d => d[1])
+                    .attr("fill", "black");
+
+                hideSpinner();
+            });
+        }
+
+        // Function to get dominant color from image data
+        function getDominantColor(imageData) {
+            const colorCount = {};
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const hsl = rgbToHsl(r, g, b);
+                const key = hsl.join(",");
+                colorCount[key] = colorCount[key] ? colorCount[key] + 1 : 1;
+            }
+
+            let dominantColor = null;
+            let maxCount = -1;
+
+            for (const key in colorCount) {
+                if (colorCount.hasOwnProperty(key) && colorCount[key] > maxCount) {
+                    dominantColor = key.split(",").map(Number);
+                    maxCount = colorCount[key];
+                }
+            }
+
+            return `hsl(${dominantColor[0]}, ${dominantColor[1]}%, ${dominantColor[2]}%)`;
+        }
+
+        // Function to convert RGB to HSL
+        function rgbToHsl(r, g, b) {
+            r /= 255, g /= 255, b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0; // achromatic
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+
+            return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+        }
+
+        // Event listeners for file drop and file select button
+        const dropZone = document.getElementById('drop-zone');
+        dropZone.addEventListener('dragover', event => {
+            event.preventDefault();
+            dropZone.classList.add('highlight');
+        });
+        dropZone.addEventListener('dragleave', event => {
+            event.preventDefault();
+            dropZone.classList.remove('highlight');
+        });
+        dropZone.addEventListener('drop', handleFileDrop);
+
+        const fileInput = document.getElementById('file-input');
+        fileInput.addEventListener('change', handleFileSelect);
+
+        const selectFilesButton = document.getElementById('select-files');
+        selectFilesButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+    </script>
+</body>
+</html>

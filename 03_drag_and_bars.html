@@ -1,0 +1,188 @@
+<!-- *************************
+    A mini tool to generate a list of color values from one or various image files. 
+    ereyes.github.io
+    Paris, 02.2024
+    License: Creative Commons CC BY-SA 4.0
+    ************************* -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Listmaker</title>
+<style>
+    * { box-sizing: border-box;}
+
+    #welcome {
+        width:250px;
+        float:left;
+        margin-left: 20px;
+    }
+    #welcome p {
+        color:#888;
+    }
+    #drop_zone {
+        width: 270px;
+        height:250px;
+        border: 2px dashed #ccc;
+        margin-left: 50px;
+        margin-top: 30px;
+        text-align: left;
+        line-height: 30px;
+        padding:2em;
+        float: left;
+    }
+    #image_count {
+        clear: both;
+    }
+
+    #image_container {
+        clear: both;
+    }
+
+    .thumbnail {
+        width: 25px;
+        height: 25px;
+    }
+
+    .thumbnail:hover {
+        width: 100px;
+        height: 100px;
+        transition: width 0.5s, height 0.5s;
+    }
+    .color_display {
+        float: left;
+    }
+
+    .color_values {
+        text-align: center;
+    }
+
+
+
+</style>
+</head>
+<body>
+
+    <div id="instructions">
+        <div id="welcome">
+            <h1>Drag & <span style="color: tomato;">Bars</span> </h1>
+            <p>A simple drag and drop tool to create a histogram of colors from image files.</p>
+            <p>Bars are ordered as they are in your folder.</p>
+        </div>
+    
+        <div id="drop_zone" ondrop="drop(event)" ondragover="allowDrop(event)">
+            Drag & drop image(s) or <br>
+            <input type="file" id="fileInput" multiple onchange="loadImages(event)">
+        </div>
+    </div>
+
+<div id="image_count"></div>
+<div id="image_container"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+<script>
+    function allowDrop(event) {
+        event.preventDefault();
+    }
+
+    function drop(event) {
+        event.preventDefault();
+        var files = event.dataTransfer.files;
+        loadImagesFromFileList(files);
+    }
+
+    function loadImages(event) {
+        var files = event.target.files;
+        loadImagesFromFileList(files);
+    }
+
+    function loadImagesFromFileList(files) {
+        var space = document.createElement('div');
+        
+        for (var i = 0; i < files.length; i++) {
+            if (files[i].type.match('image.*')) {                
+
+                var reader = new FileReader();
+
+                reader.onload = (function(index) {
+                    var viz;
+                    return function(e) {
+
+                        var image = document.createElement('img');
+                        image.src = e.target.result;
+                        image.className = 'thumbnail';
+                        //cell1.appendChild(image);
+
+                        getColor(e.target.result, function(color) {
+                            var hslComponents = rgbToHsl(color[0], color[1], color[2]);
+                            var colorDisplay = document.createElement('div');
+                            var image = document.createElement('img');
+                            var pageWidth = window.innerWidth - 30;
+                            var pageHeight = window.innerHeight;
+                            image.src = e.target.result;
+                            image.className = 'thumbnail';
+                            colorDisplay.className = 'color_display';
+                            colorDisplay.style.backgroundColor = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ', 0.6)';
+                            //colorDisplay.style.left = '10px';
+                            colorDisplay.style.top =  '100px';
+                            colorDisplay.style.width = pageWidth / files.length + 'px';
+                            colorDisplay.style.height =  pageHeight - 50 + 'px';
+                            //colorDisplay.appendChild(image);
+                            space.appendChild(colorDisplay);
+
+
+                        });
+                    };
+                })(i);
+                reader.readAsDataURL(files[i]);
+            }
+        }
+        document.getElementsByTagName('body')[0].style.backgroundColor = "#eee";
+        document.getElementsByTagName('body')[0].style.overflow = "hidden"; 
+        document.getElementById('image_container').appendChild(space);
+        document.getElementById('instructions').style.display = 'none';
+        document.getElementById('image_container').style.zIndex = 10000;
+        document.getElementById('image_count').innerHTML = 'You added ' + i + ' images. <button onclick="location.reload();">Restart</button>';
+    }
+
+    function getColor(imageSrc, callback) {
+        var image = document.createElement('img');
+        image.onload = function() {
+            var colorThief = new ColorThief();
+            var dominantColor = colorThief.getColor(image);
+            if (typeof callback === 'function') {
+                callback(dominantColor);
+            }
+        };
+        image.src = imageSrc;
+    }
+
+    function rgbToHsl(r, g, b) {
+        r /= 255, g /= 255, b /= 255;
+        var max = Math.max(r, g, b), min = Math.min(r, g, b);
+        var h, s, l = (max + min) / 2;
+
+        if (max === min) {
+            h = s = 0;
+        } else {
+            var d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+    }
+
+    function rgbToHex(r, g, b) {
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+</script>
+
+</body>
+</html>

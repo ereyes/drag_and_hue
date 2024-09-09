@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Sorter 3D</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            flex-direction: column;
+        }
+        #drop-zone {
+            margin-top: 20px;
+            width: 300px;
+            height: 300px;
+            border: 2px dashed #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+        #drop-zone.dragover {
+            border-color: #333;
+            color: #333;
+        }
+        #canvas-container {
+            position: relative;
+            width: 80vw;
+            height: 80vh;
+            z-index: 100;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">
+        <div id="welcome">
+            <h1>Drag & <span style="color: tomato;">Cone</span> </h1>
+            <p>A simple drag and drop tool to display a cone of colors from image files.</p>
+            <p>The cone shape represents the HSL color model.</p>
+        </div>
+        <div id="drop-zone">Drop an image here</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Include Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Include OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const container = document.getElementById('canvas-container');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        processImage(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+
+        function processImage(imageSrc) {
+            document.getElementById('instructions').style.display = "none";
+            const img = new Image();
+            img.src = imageSrc;
+            img.onload = () => {
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = img.width;
+                tempCanvas.height = img.height;
+                tempCtx.drawImage(img, 0, 0);
+                const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                const colors = extractColors(imageData);
+                const sortedColors = sortColors(colors);
+                displayColorsIn3D(sortedColors);
+            };
+        }
+
+        function extractColors(imageData) {
+            const colors = [];
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 100) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                colors.push({ r, g, b });
+            }
+            return colors;
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            let max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            if (max === min) {
+                h = s = 0;
+            } else {
+                let d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return [h * 360, s * 100, l * 100];
+        }
+
+        function sortColors(colors) {
+            return colors.map(color => {
+                const hsl = rgbToHsl(color.r, color.g, color.b);
+                return { ...color, h: hsl[0], s: hsl[1], l: hsl[2] };
+            });
+        }
+
+        function displayColorsIn3D(colors) {
+            // Remove existing scene if any
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+
+            // Create a new scene
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x808080);
+            const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000); // Zoomed out a bit
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
+            controls.screenSpacePanning = false;
+            controls.maxPolarAngle = Math.PI / 2;
+
+            // Create a group to hold all the spheres
+            const group = new THREE.Group();
+
+            const geometry = new THREE.SphereGeometry(0.1, 5, 5);
+            colors.forEach(color => {
+                const material = new THREE.MeshBasicMaterial({ color: `rgb(${color.r}, ${color.g}, ${color.b})` });
+                const sphere = new THREE.Mesh(geometry, material);
+                const angle = (color.h / 360) * 2 * Math.PI;
+                const radius = (color.s / 100) * 5;
+                const height = (color.l / 100) * 10;
+                sphere.position.set(radius * Math.cos(angle), height, radius * Math.sin(angle));
+                group.add(sphere); // Add spheres to the group
+            });
+
+            scene.add(group); // Add the group to the scene
+
+            camera.position.set(0, 30, 25); // Adjust vertical position to lift the view
+
+            // Animation loop with slow rotation
+            const animate = function () {
+                requestAnimationFrame(animate);
+                
+                // Rotate the group around its Y axis
+                group.rotation.y += 0.01; // Slow rotation on Y-axis
+
+                controls.update();
+                renderer.render(scene, camera);
+            };
+
+            animate();
+        }
+    </script>
+</body>
+</html>
