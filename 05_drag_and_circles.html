@@ -1,9 +1,16 @@
+<!-- *************************
+    A mini tool to generate colored circles from various image files. 
+    ereyes.github.io
+    Paris, 02.2024
+    License: Creative Commons CC BY-SA 4.0
+    ************************* 
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiple Image Upload with Dominant Colors</title>
+    <title>Drag and Circles</title>
     <style>
         * { box-sizing: border-box;}
         #welcome {
@@ -50,9 +57,10 @@
 <div id="instructions">
     <div id="welcome">
         <h1>Drag & <span style="color: tomato;">Circles</span> </h1>
-        <p>A simple drag and drop tool to plot a series of image files a colored circles.</p>
+        <p>A simple drag and drop tool to generate colored circles from a series of image files.</p>
         <p>Color mode is RGB. The inner circle represents the dominant color.</p>
         <p>The color of the border represents the secondary color.</p>
+        <p>Mouse over a circle to see preview of the picture.</p>
     </div>
     <div id="drop-zone">Drag & Drop images here or <button onclick="document.getElementById('file-input').click()">Select Files</button></div>
 </div>
