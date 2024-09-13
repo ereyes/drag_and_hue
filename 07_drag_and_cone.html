@@ -1,9 +1,17 @@
+<!-- *************************
+    A mini tool to generate 3D cone from an image file. 
+    ereyes.github.io
+    Paris, 02.2024
+    License: Creative Commons CC BY-SA 4.0
+    ************************* 
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Color Sorter 3D</title>
+    <title>Drag and Cone</title>
     <style>
         body {
             display: flex;
@@ -39,6 +47,9 @@
         canvas {
             display: block;
         }
+        #file-input {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -47,8 +58,10 @@
             <h1>Drag & <span style="color: tomato;">Cone</span> </h1>
             <p>A simple drag and drop tool to display a cone of colors from image files.</p>
             <p>The cone shape represents the HSL color model.</p>
+            <p><a href="https://ereyes.github.io/drag_and_hue/">Back to all Drag & Hue tools.</a></p>
         </div>
         <div id="drop-zone">Drop an image here</div>
+        <input type="file" id="file-input" accept="image/*">
     </div>
 
     <div id="canvas-container"></div>
@@ -60,6 +73,7 @@
 
     <script>
         const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
         const container = document.getElementById('canvas-container');
 
         dropZone.addEventListener('dragover', (e) => {
@@ -77,15 +91,26 @@
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 const file = files[0];
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        processImage(event.target.result);
-                    };
-                    reader.readAsDataURL(file);
-                }
+                handleFile(file);
             }
         });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        function handleFile(file) {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    processImage(event.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
 
         function processImage(imageSrc) {
             document.getElementById('instructions').style.display = "none";
@@ -145,15 +170,13 @@
         }
 
         function displayColorsIn3D(colors) {
-            // Remove existing scene if any
             while (container.firstChild) {
                 container.removeChild(container.firstChild);
             }
 
-            // Create a new scene
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0x808080);
-            const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000); // Zoomed out a bit
+            const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer();
             renderer.setSize(container.clientWidth, container.clientHeight);
             container.appendChild(renderer.domElement);
@@ -164,9 +187,7 @@
             controls.screenSpacePanning = false;
             controls.maxPolarAngle = Math.PI / 2;
 
-            // Create a group to hold all the spheres
             const group = new THREE.Group();
-
             const geometry = new THREE.SphereGeometry(0.1, 5, 5);
             colors.forEach(color => {
                 const material = new THREE.MeshBasicMaterial({ color: `rgb(${color.r}, ${color.g}, ${color.b})` });
@@ -175,20 +196,15 @@
                 const radius = (color.s / 100) * 5;
                 const height = (color.l / 100) * 10;
                 sphere.position.set(radius * Math.cos(angle), height, radius * Math.sin(angle));
-                group.add(sphere); // Add spheres to the group
+                group.add(sphere);
             });
 
-            scene.add(group); // Add the group to the scene
+            scene.add(group);
+            camera.position.set(0, 30, 25);
 
-            camera.position.set(0, 30, 25); // Adjust vertical position to lift the view
-
-            // Animation loop with slow rotation
             const animate = function () {
                 requestAnimationFrame(animate);
-                
-                // Rotate the group around its Y axis
-                group.rotation.y += 0.01; // Slow rotation on Y-axis
-
+                group.rotation.y += 0.01;
                 controls.update();
                 renderer.render(scene, camera);
             };
