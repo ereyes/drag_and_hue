@@ -135,8 +135,8 @@
 
                         const dominancePercentage1 = getDominancePercentage(img, mostDominantColor);
                         const dominancePercentage2 = getDominancePercentage(img, secondDominantColor);
-                        const diameter = Math.max(35, Math.min(100, dominancePercentage1 * 1000)); // Adjusting the diameter based on dominance percentage of the most dominant color
-                        const borderWidth = Math.max(7, Math.min(20, dominancePercentage2 * 500)); // Adjusting the border width based on dominance percentage of the second dominant color
+                        const diameter = Math.max(50, Math.min(100, dominancePercentage1 * 1000)); // Adjusting the diameter based on dominance percentage of the most dominant color
+                        const borderWidth = Math.max(10, Math.min(20, dominancePercentage2 * 500)); // Adjusting the border width based on dominance percentage of the second dominant color
 
                         let x, y;
                         do {
