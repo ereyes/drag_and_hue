@@ -1,0 +1,240 @@
+<!-- *************************
+    A mini tool to generate an ordered colored bar code from image files. 
+    ereyes.github.io
+    Paris, 09.2024
+    License: Creative Commons CC BY-SA 4.0
+    ************************* -->
+    
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drag and Ordered Bars</title>
+<style>
+    * { box-sizing: border-box;}
+
+    #welcome {
+        width:400px;
+        float:left;
+        margin-left: 20px;
+    }
+    #welcome p {
+        color:#888;
+    }
+    #drop_zone {
+        width: 270px;
+        height:250px;
+        border: 2px dashed #ccc;
+        margin-left: 70px;
+        margin-top: 30px;
+        text-align: left;
+        line-height: 30px;
+        padding:2em;
+        float: left;
+    }
+    #image_count {
+        clear: both;
+    }
+
+    #image_container {
+        clear: both;
+    }
+
+    .thumbnail {
+        width: 25px;
+        height: 25px;
+    }
+
+    .thumbnail:hover {
+        width: 100px;
+        height: 100px;
+        transition: width 0.5s, height 0.5s;
+    }
+    .color_display {
+        float: left;
+    }
+
+    .color_values {
+        text-align: center;
+    }
+
+    #loadingMessage {
+        text-align: center;
+        font-size: 18px;
+        color: #333;
+        margin-top: 20px;
+    }
+
+    #imagePreview {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        text-align: center;
+        display: none; /* Initially hide the preview until an image is clicked */
+    }
+
+    #imagePreview img {
+        max-width: 150px;
+        max-height: 150px;
+        border: 2px solid #333;
+        border-radius: 5px;
+    }
+</style>
+</head>
+<body>
+
+    <div id="instructions">
+        <div id="welcome">
+            <h1>Drag & <span style="color: tomato;">Ordered Bars</span> </h1>
+            <p>A simple drag and drop tool to create an ordered colored bar code from image files.</p>
+            <p>Bars are ordered by the first component of HSL: hue.</p>
+            <p>Click on a bar to show its related image.</p>
+            <p><a href="https://ereyes.github.io/drag_and_hue/">Back to all Drag & Hue tools.</a></p>
+        </div>
+    
+        <div id="drop_zone" ondrop="drop(event)" ondragover="allowDrop(event)">
+            Drag & drop image(s) or <br>
+            <input type="file" id="fileInput" multiple>
+        </div>
+    </div>
+
+<div id="image_count"></div>
+<div id="image_container"></div>
+
+<!-- Image preview -->
+<div id="imagePreview">
+    <img id="previewImage" src="" alt="Image Preview">
+</div>
+
+<!-- Loading message -->
+<div id="loadingMessage" style="display: none;">Loading images... <br> Ordering colors... <br> Preparing to display the color bars... <br>Please wait a few seconds...</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+<script>
+    function allowDrop(event) {
+        event.preventDefault();
+    }
+
+    function drop(event) {
+        event.preventDefault();
+        var files = event.dataTransfer.files;
+        loadImagesFromFileList(files);
+    }
+
+    function loadImages(event) {
+        var files = event.target.files;
+        loadImagesFromFileList(files);
+    }
+
+    function loadImagesFromFileList(files) {
+        var colorsArray = [];
+        var space = document.createElement('div');
+        
+        // Show loading message
+        document.getElementById('loadingMessage').style.display = 'block';
+
+        for (var i = 0; i < files.length; i++) {
+            if (files[i].type.match('image.*')) {
+                var reader = new FileReader();
+
+                reader.onload = (function(index) {
+                    return function(e) {
+                        getColor(e.target.result, function(color) {
+                            var hslComponents = rgbToHsl(color[0], color[1], color[2]);
+                            colorsArray.push({
+                                color: color,
+                                hsl: hslComponents,
+                                imageSrc: e.target.result
+                            });
+
+                            // Once all colors are loaded, sort them and display
+                            if (colorsArray.length === files.length) {
+                                // Sort by the first component of HSL (hue)
+                                colorsArray.sort(function(a, b) {
+                                    return a.hsl[0] - b.hsl[0]; // Sort by hue
+                                });
+
+                                displayColors(colorsArray, space, files.length);
+                                
+                                // Hide loading message when done
+                                document.getElementById('loadingMessage').style.display = 'none';
+                            }
+                        });
+                    };
+                })(i);
+                reader.readAsDataURL(files[i]);
+            }
+        }
+
+        document.getElementsByTagName('body')[0].style.backgroundColor = "#eee";
+        document.getElementsByTagName('body')[0].style.overflow = "hidden"; 
+        document.getElementById('instructions').style.display = 'none';
+        document.getElementById('image_container').style.zIndex = 10000;
+        document.getElementById('image_count').innerHTML = 'You added ' + i + ' images. <button onclick="location.reload();">Restart</button>';
+    }
+
+    function displayColors(colorsArray, space, fileCount) {
+        var pageWidth = window.innerWidth - 30;
+        var pageHeight = window.innerHeight;
+
+        colorsArray.forEach(function(item) {
+            var colorDisplay = document.createElement('div');
+            colorDisplay.className = 'color_display';
+            colorDisplay.style.backgroundColor = 'rgba(' + item.color[0] + ',' + item.color[1] + ',' + item.color[2] + ', 0.6)';
+            colorDisplay.style.width = pageWidth / fileCount + 'px';
+            colorDisplay.style.height = pageHeight - 50 + 'px';
+
+            // Add click event to show the image in the preview
+            colorDisplay.addEventListener('click', function() {
+                document.getElementById('previewImage').src = item.imageSrc;
+                document.getElementById('imagePreview').style.display = 'block'; // Show the preview container
+            });
+
+            space.appendChild(colorDisplay);
+        });
+
+        document.getElementById('image_container').appendChild(space);
+    }
+
+    function getColor(imageSrc, callback) {
+        var image = document.createElement('img');
+        image.onload = function() {
+            var colorThief = new ColorThief();
+            var dominantColor = colorThief.getColor(image);
+            if (typeof callback === 'function') {
+                callback(dominantColor);
+            }
+        };
+        image.src = imageSrc;
+    }
+
+    function rgbToHsl(r, g, b) {
+        r /= 255, g /= 255, b /= 255;
+        var max = Math.max(r, g, b), min = Math.min(r, g, b);
+        var h, s, l = (max + min) / 2;
+
+        if (max === min) {
+            h = s = 0;
+        } else {
+            var d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+    }
+</script>
+
+<script>
+    document.getElementById('fileInput').addEventListener('change', loadImages);
+</script>
+
+</body>
+</html>
