@@ -6,38 +6,112 @@
     <meta property="og:image" content="drag_and_hue_poster.jpg" />
     <meta property="og:image:width" content="1000"/>
     <meta property="og:image:height" content="527"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
     <title>Drag & Hue: a series of simple tools to visualize visual images.</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        .lora-400 {
+            font-family: "Lora", serif;
+            font-optical-sizing: auto;
+            font-weight: <weight>;
+            font-style: normal;
+        }
+        /* Global styling for body and html */
+        body, html {
             margin: 0;
             padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Left Pane */
+        .left-pane {
+            width: 20%; /* Adjust width as necessary */
+            height: 100vh;
+            position: fixed;
             background-color: #f0f0f0;
-            display: flex;
-            flex-direction: column;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            font-size: 90%;
+        }
+
+        /* Right Pane (Main Content) */
+        .right-pane {
+            margin-left: 27%; /* Same width as the left pane */
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
             align-items: center;
-            min-height: 100vh;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, black, tomato);
+            -webkit-background-clip: text;
+            color: transparent;
         }
         .title {
             font-family: "Times New Roman", Times, serif;
             font-size: 4em;
             margin: 20px 0;
-            text-align: center;
-        }
-        .title span {
-            color: tomato;
+            text-align: left;
         }
         .subtitle {
             font-size: 1.2em;
             margin-bottom: 20px;
-            text-align: center;
+            text-align: left;
         }
         .container {
             display: flex;
             flex-wrap: wrap;
-            justify-content: center;
-            max-width: 1000px;
+            justify-content: flex-start; /* Align thumbnails to the left */
             padding: 20px;
+        }
+        .category {
+            margin-top: 40px;
+            font-size: 1.5em;
+            text-align: left;
+            font-weight: bold;
+        }
+        .image-block {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
         }
         .image-link {
             margin: 10px;
@@ -54,103 +128,226 @@
             text-align: center;
         }
 
-        /* Ensure title visibility on smaller screens */
-        @media (max-width: 768px) {
-            .title {
-                font-size: 2em;
-            }
+        #citation {
+            border-top: dotted 2px gray;
+            margin-top: 2em;
+            padding-top: 1em;
+
         }
 
         footer {
-            text-align: center;
-            padding: 10px;
-            background-color: #222;
-            color: white;
-            width: 100%;
-            margin-top: auto;
-            font-size: 80%;
+            border-top: solid 2px gray;
+            margin-top: 2em;
+            padding-top: 1em;
         }
-        footer a {
-            color: tomato;
-            text-decoration: none;
+
+        /* Responsive Behavior */
+        @media screen and (max-width: 768px) {
+            .left-pane {
+                width: 25%;
+                font-size: 80%;
+            }
+            .left-pane img {
+                width: 150px;
+            }
+            .right-pane {
+                margin-left: 35%;
+                font-size: 80%;
+            }
         }
-        footer a:hover {
-            text-decoration: underline;
+
+        @media screen and (max-width: 480px) {
+            .left-pane {
+                width: 30%;
+                font-size: 70%;
+            }
+            .left-pane img {
+                width: 140px;
+            }
+            .left-pane h1 {
+                font-size: 100%;
+            }
+            .left-pane h2 {
+                font-size: 100%;
+            }
+            .right-pane {
+                margin-left: 40%;
+                font-size: 80%;
+            }
         }
     </style>
 </head>
-<body>
-
-    <div class="title">
-        Drag & <span>Hue</span>
+<body  class="lora-400">
+    <!-- Left Pane -->
+    <div class="left-pane">
+            <h1><i class="fa-regular fa-hand-back-fist"></i>  <span class="gradient-text lora-400">Drag & Hue</span></h1>
+            <!-- TOC -->
+            <div id="toc">
+                <h2>Table of Contents</h2>
+                <ul>
+                    <li><a href="#multiple-files">Multiple Files</a></li>
+                    <li><a href="#single-file">Single File</a></li>
+                    <li><a href="#coming-soon">Coming Soon</a></li>
+                    <li><a href="#further">Further Improvements</a></li>
+                </ul>
+            </div>
+            <!-- Citation -->
+            <div id="citation">
+                Citation: 
+                <p>Reyes, Everardo (2024). Drag & Hue (0.1). Zenodo. <a href="https://doi.org/10.5281/zenodo.13835746">https://doi.org/10.5281/zenodo.13835746</a></p>
+                <a href="https://doi.org/10.5281/zenodo.13835746"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.13835746.svg" alt="DOI"></a>
+                <br>
+                <button id="showCodeBtn">BibTeX</button>
+            </div>
+            <!-- Footer -->
+            <footer>
+                <p><a href="http://ereyes.net">E. Reyes</a>, Paris, 2024. </p>
+                <p>This tool is for scientific and educational purposes only. This site does not track your data.</p>
+            </footer>
     </div>
 
-    <div class="subtitle">
-        A series of simple drag and drop tools to visualize visual images.
-    </div>
+    <!-- Right Pane (Main Content) -->
+    <div class="right-pane">
+            <!-- Title and Subtitle -->
+            <div class="title">
+                <i class="fa-regular fa-hand-back-fist"></i>  <span class="gradient-text lora-400">Drag & Hue</span>
+            </div>
+            <div class="subtitle">
+                A series of simple drag and drop tools to visualize visual images.
+            </div>
 
-    <div class="container">
-        <div class="image-link">
-            <a href="01_listmaker.html">
-                <img src="listmaker.jpg" alt="Listmaker Image">
-            </a>
-            <p>Listmaker</p>
-        </div>
+            <!-- Anchored sections -->
+            <div id="multiple-files" class="category">Multiple Files</div>
+            <div class="container">
+                <div class="image-link">
+                    <a href="01_listmaker.html">
+                        <img src="listmaker.jpg" alt="Listmaker Image">
+                    </a>
+                    <p>Listmaker</p>
+                </div>
 
-        <div class="image-link">
-            <a href="02_drag_and_mosaic.html">
-                <img src="drag_and_mosaic.jpg" alt="Mosaic Image">
-            </a>
-            <p>Mosaic</p>
-        </div>
+                <div class="image-link">
+                    <a href="02_drag_and_mosaic.html">
+                        <img src="drag_and_mosaic.jpg" alt="Mosaic Image">
+                    </a>
+                    <p>Mosaic</p>
+                </div>
 
-        <div class="image-link">
-            <a href="03_drag_and_bars.html">
-                <img src="drag_and_bars.jpg" alt="Bars Image">
-            </a>
-            <p>Bars</p>
-        </div>
+                <div class="image-link">
+                    <a href="03_drag_and_bars.html">
+                        <img src="drag_and_bars.jpg" alt="Bars Image">
+                    </a>
+                    <p>Bars</p>
+                </div>
 
-        <div class="image-link">
-            <a href="08_drag_and_bars_ordered.html">
-                <img src="drag_and_bars_ordered.png" alt="Ordered Bars Image">
-            </a>
-            <p>Ordered Bars</p>
-        </div>        
+                <div class="image-link">
+                    <a href="08_drag_and_bars_ordered.html">
+                        <img src="drag_and_bars_ordered.png" alt="Ordered Bars Image">
+                    </a>
+                    <p>Ordered Bars</p>
+                </div> 
+
+                <div class="image-link">
+                    <a href="04_drag_and_plot.html">
+                        <img src="drag_and_plot.jpg" alt="Plot Image">
+                    </a>
+                    <p>Plot</p>
+                </div>
+
+                <div class="image-link">
+                    <a href="05_drag_and_circles.html">
+                        <img src="drag_and_circles.jpg" alt="Circles Image">
+                    </a>
+                    <p>Circles</p>
+                </div>
+
+                <div class="image-link">
+                    <a href="06_drag_and_voronoi.html">
+                        <img src="drag_and_voronoi.jpg" alt="Voronoi Image">
+                    </a>
+                    <p>Voronoi</p>
+                </div>
+            </div>
+
+            <div id="single-file" class="category">Single File</div>
+            <div class="container">
+                <div class="image-link">
+                    <a href="07_drag_and_cone.html">
+                        <img src="drag_and_cone.jpg" alt="Cone Image">
+                    </a>
+                    <p>Cone</p>
+                </div>
+            </div>
+
+            <div id="coming-soon" class="category">Coming Soon</div>
+            <div class="container">
+                <ul>
+                    <li>Drag & Rings</li>
+                    <li>Drag & Mountains</li>
+                    <li>Drag & Rays</li>
+                    <li>Drag & Bubbles</li>
+                    <li>Drag & Orbit</li>
+                </ul>                
+            </div>
+
+            <div id="further" class="category">Further Improvements</div>
+            <div class="container">
+                <ul>
+                    <li>Image Counter</li>
+                    <li>Save Screen</li>
+                    <li>Preview Images</li>
+                </ul>
+            </div>
         
-        <div class="image-link">
-            <a href="04_drag_and_plot.html">
-                <img src="drag_and_plot.jpg" alt="Plot Image">
-            </a>
-            <p>Plot</p>
-        </div>
+    </div>
 
-        <div class="image-link">
-            <a href="05_drag_and_circles.html">
-                <img src="drag_and_circles.jpg" alt="Circles Image">
-            </a>
-            <p>Circles</p>
-        </div>
-
-        <div class="image-link">
-            <a href="06_drag_and_voronoi.html">
-                <img src="drag_and_voronoi.jpg" alt="Voronoi Image">
-            </a>
-            <p>Voronoi</p>
-        </div>
-
-        <div class="image-link">
-            <a href="07_drag_and_cone.html">
-                <img src="drag_and_cone.jpg" alt="Cone Image">
-            </a>
-            <p>Cone</p>
+    <!-- The Modal -->
+    <div id="codeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <pre>
+                <code>
+@software{reyes_2024_13835746,
+    author       = {Reyes, Everardo},
+    title        = {Drag \& Hue},
+    month        = sep,
+    year         = 2024,
+    publisher    = {Zenodo},
+    version      = {0.1},
+    doi          = {10.5281/zenodo.13835746},
+    url          = {https://doi.org/10.5281/zenodo.13835746}
+}
+                </code>
+            </pre>
         </div>
     </div>
 
-    <footer>
-        <p><a href="http://ereyes.net">E. Reyes</a>, Paris, 2024. </p>
-        <p>This tool is for scientific and educational purposes only. This site does not track your data.</p>
-    </footer>
+    <script>
+        // Get the modal
+        var modal = document.getElementById("codeModal");
 
+        // Get the button that opens the modal
+        var btn = document.getElementById("showCodeBtn");
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+
+        // When the user clicks the button, open the modal 
+        btn.onclick = function() {
+            modal.style.display = "flex";
+        }
+
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
 </body>
 </html>
