@@ -22,29 +22,57 @@ body, html {
     "wdth" 100;
 }
 
+/* Fixed black banner */
+.top-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 30px;
+    background-color: #eee; /* Set background to black */
+    display: flex;
+    align-items: center;
+    padding: 0 30px;
+    z-index: 1000;
+    font-family: "Fredoka", sans-serif;
+    color: transparent;
+}
+
+.top-banner i {
+    margin-right: 8px;
+    color: #000;
+}
+
+/* Text with linear gradient from white to red */
+.top-banner span {
+    background-image: linear-gradient(to right, black, tomato); /* Linear gradient from white to red */
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
 /* Left Pane */
 .left-panel {
     width: 250px; /* Adjust width as necessary */
     height: 100vh;
     position: fixed;
     background-color: #eee;
-    padding:2em 2em 0 2em;
+    padding:3em 2em 0 2em;
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
     font-size: 90%;
+}
+
+.left-panel ul {
+    padding:0.7em;
 }
 
 /* Right Pane (Main Content) */
 .right-panel {
     margin-left: 250px; /* Same width as the left pane */
-    padding:0 2em 0 2.5em;
+    padding:2em 2em 0 2.5em;
     background-color: #fff;
     height: 100vh;
     overflow-y: auto;
-}
-
-
-.left-panel ul {
-    padding:0.7em;
 }
 
 /* Modal styling */
@@ -131,8 +159,15 @@ body, html {
 }
 
 #citation {
-    padding-bottom: 4em;
+    position:absolute; 
+    bottom:7px; 
+    background-color: #eee; 
+    border-top:1px dotted gray; 
+    padding-top: 7px; 
+    font-size: 80%;
 }
+
+
 
 footer {
     border-top: solid 2px gray;
@@ -141,37 +176,48 @@ footer {
     font-size: 0.8em;
 }
 
-/* Responsive Behavior */
-@media screen and (max-width: 768px) {
-    .left-pane {
-        width: 25%;
-        font-size: 80%;
-    }
-    .left-pane img {
-        width: 150px;
-    }
-    .right-pane {
-        margin-left: 35%;
-        font-size: 80%;
-    }
-}
+@media only screen and (min-width: 300px) and (max-width: 600px) {
 
-@media screen and (max-width: 480px) {
-    .left-pane {
-        width: 30%;
-        font-size: 70%;
+    .top-banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 30px;
+        background-color:#eee;
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        z-index: 1000;
+        font-family: "Fredoka", sans-serif;
     }
-    .left-pane img {
-        width: 140px;
+
+    .left-panel {
+        width: 150px; /* Adjusts the panel to take the full width of the screen */
+        padding:3em 1.5em; /* Adjust padding for smaller screens */
+        font-size:70%; /* Reduce the font size for better readability */
     }
-    .left-pane h1 {
-        font-size: 100%;
+
+    .left-panel ul {
+        padding: 0.5em; /* Adjust padding inside the list */
     }
-    .left-pane h2 {
-        font-size: 100%;
+    .right-panel {
+        margin-left:155px; /* Same width as the left pane */
+        padding:1em;
+        background-color: #fff;
+        height: 100vh;
+        overflow-y: auto;
     }
-    .right-pane {
-        margin-left: 40%;
-        font-size: 80%;
+
+    #citation {
+        position:absolute; 
+        bottom:7px; 
+        background-color: #eee; 
+        border-top:1px dotted gray; 
+        padding-top: 7px; 
+        font-size:70%;
+    }
+    #citation img {
+        width: 120px;
     }
 }
