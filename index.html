@@ -1,236 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Required meta tags -->
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta property="og:image" content="drag_and_hue_poster.jpg" />
-  <meta property="og:image:width" content="1000"/>
-  <meta property="og:image:height" content="527"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
-  <title>Drag & Hue: a series of simple tools to visualize visual images.</title>
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <style>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:image" content="drag_and_hue_poster.jpg" />
+    <meta property="og:image:width" content="1000"/>
+    <meta property="og:image:height" content="693"/>
+    <title>Drag & Hue: a series of simple tools to visualize visual images.</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .lora-400 {
+            font-family: "Lora", serif;
+            font-optical-sizing: auto;
+            font-weight:400;
+            font-style: normal;
+        }
 
-  </style>
+        .fredoka-300 {
+        font-family: "Fredoka", sans-serif;
+        font-optical-sizing: auto;
+        font-weight:300;
+        font-style: normal;
+        font-variation-settings:
+            "wdth" 100;
+        }
+        @media (min-width: 768px) {
+            .responsive-text {
+                font-size: 1.5rem;
+            }
+            .responsive-title {
+                font-size: 2.5rem;
+            }
+        }
+        @media (min-width: 1200px) {
+            .responsive-text {
+                font-size: 2rem;
+            }
+            .responsive-title {
+                font-size: 3.5rem;
+            }
+        }
+        .section-bg {
+            background-color: #eee;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .thumbnail-section {
+            background-color: #fff;
+            padding: 20px;
+            margin-top: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .thumbnail {
+            width: 150px;
+            height: 150px;
+            display: inline-block;
+            margin: 13px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            flex-direction: column;
+        }
+        .thumbnail img {
+            max-width: 100%;
+            max-height: 80%;
+            border-radius: 4px;
+        }
+        .thumbnail span {
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+        .footer-bg {
+            background-color: #eee;
+            padding: 20px;
+            text-align: center;
+        }
 
+        /* Modal styling */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
+    <div class="container mt-5 text-center" style="max-width: 800px;">
+        <h1 class="d-flex align-items-center justify-content-center responsive-title">
+            <span class="fredoka-300">Drag</span>
+            <img src="logo.png" alt="Logo" class="mx-2" style="height: 50px;">
+            <span class="fredoka-300">Hue</span class="fredoka-300">
+        </h1>
+        <p class="mt-4 responsive-text lora-400"> <strong>Drag & Hue</strong> is a series of simple drag & drop tools to visualize visual images.</p>
+        <p class="responsive-text lora-400">It follows previous research on cultural analytics and cultural visualization. It supports the concept of <em>live image visualization</em> , where a collection of images is directly displayed when the user drops or selects the files.</p>
+        
+        <section class="section-bg mt-4">
+            <div class="d-flex justify-content-center align-items-center">
+                <span class="me-2">Drag &</span>
+                <select class="form-select" style="width: auto;" onchange="openHtml(this.value)">
+                    <option selected>choose...</option>
+                    <option value="listmaker.html">Listmaker</option>
+                    <option value="mosaic.html">Mosaic</option>
+                    <option value="bars.html">Bars</option>
+                    <option value="ordered-bars.html">Ordered Bars</option>
+                    <option value="plot.html">Plot</option>
+                    <option value="circles.html">Circles</option>
+                    <option value="voronoi.html">Voronoi</option>
+                    <option value="cone.html">Cone</option>
+                </select>
+            </div>
+        </section>
 
-    <!-- Top banner -->
-    <div class="top-banner">
-            <i class="fa-regular fa-hand-back-fist"></i>
-            <span>Drag & Hue</span>
+        <section class="thumbnail-section">
+            <p class="mb-3">Visualize multiple image files</p>
+            <div class="d-flex flex-wrap justify-content-center">
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/listmaker.jpg" alt="Listmaker Image">
+                    <span>Listmaker</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_mosaic.jpg" alt="Mosaic Image">
+                    <span>Mosaic</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_bars.jpg" alt="Bars Image">
+                    <span>Bars</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_bars_ordered.png" alt="Ordered Bars Image">
+                    <span>Ordered Bars</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_plot.jpg" alt="Plot Image">
+                    <span>Plot</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_circles.jpg" alt="Circles Image">
+                    <span>Circles</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_voronoi.jpg" alt="Voronoi Image">
+                    <span>Voronoi</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_cube.jpg" alt="Soon">
+                    <span>Cube</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_rings.jpg" alt="Soon">
+                    <span>Rings</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_mountains.jpg" alt="Soon">
+                    <span>Mountains</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_rays.jpg" alt="Soon">
+                    <span>Rays</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_bubbles.jpg" alt="Soon">
+                    <span>Bubbles</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_orbit.jpg" alt="Soon">
+                    <span>Orbit</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="thumbnail-section">
+            <p class="mb-3">Visualize a single image file</p>
+            <div class="d-flex flex-wrap justify-content-center">
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_cone.jpg" alt="Soon">
+                    <span>Cone</span>
+                </div>
+                <div class="thumbnail">
+                    <img src="https://ereyes.github.io/drag_and_hue/drag_and_sort.jpg" alt="Soon">
+                    <span>Sort Pixels</span>
+                </div>
+            </div>
+        </section>
     </div>
 
-  <div class="container-fluid">
-    <div class="row">
-      <!-- ************************************ Left panel content ************************************  -->
-      <div class="col-auto left-panel">
+    <footer class="footer-bg lora-400">
+        <p>This tool is for scientific and educational purposes only. This site does not track your data.</p>
+        <p> <strong>Reyes</strong>, Everardo (2024). <em>Drag & Hue (0.1)</em>. Zenodo. <br> <a href="https://doi.org/10.5281/zenodo.13835746">https://doi.org/10.5281/zenodo.13835746</a>
+        <br> <a href="https://doi.org/10.5281/zenodo.13835746" target="_blank"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.13835746.svg" alt="DOI"></a>
+        &nbsp;
+        <button id="showCodeBtn">BibTeX</button>
+        </p>
+        <p><i class="fa-brands fa-github"></i> <a href="https://github.com/ereyes/drag_and_hue">https://github.com/ereyes/drag_and_hue</a></p>
+        <p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://ereyes.github.io/drag_and_hue/">Drag & Hue</a> by <a rel="cc:attributionURL dct:creator" property="cc:attributionName" href="https://ereyes.net/">Everardo Reyes</a> is licensed under <br> <a href="https://creativecommons.org/licenses/by-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">Creative Commons Attribution-ShareAlike 4.0 International<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>
+        <p><a href="http://ereyes.net">E. Reyes</a>, Paris, 2024. </p>
+    </footer>
 
-        <!-- TOC -->
-        <div id="toc" class="lora-400">
-            <p>
-                Drag & Hue is a series of simple drag and drop tools to visualize visual images.
-            </p>
-            <p>
-                It follows previous research on cultural analytics and cultural visualization.
-                It introduces the concept of symmetrical visualization, where a collection of images is directly displayed when the user drops or selects the files.
-            </p>
-            <ul>
-                <li><a href="#multiple-files">Multiple Files</a></li>
-                <li><a href="#single-file">Single File</a></li>
-                <li><a href="#coming-soon">Coming Soon</a></li>
-                <li><a href="#further">Future Improvements</a></li>
-            </ul>
+    <!-- The Modal -->
+    <div id="codeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <pre>
+                <code>
+    @software{reyes_2024_13835746,
+    author       = {Reyes, Everardo},
+    title        = {Drag \& Hue},
+    month        = sep,
+    year         = 2024,
+    publisher    = {Zenodo},
+    version      = {0.1},
+    doi          = {10.5281/zenodo.13835746},
+    url          = {https://doi.org/10.5281/zenodo.13835746}
+    }
+                </code>
+            </pre>
         </div>
-
-        <div id="citation">
-            <p>Reyes, Everardo (2024). <em>Drag & Hue (0.1)</em>. Zenodo.
-            <a href="https://doi.org/10.5281/zenodo.13835746" target="_blank"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.13835746.svg" alt="DOI"></a>
-            </p>
-        </div>
-
-
-      </div>
-
-
-      <!-- ************************************ Right panel content ************************************  -->
-      <div class="col right-panel">
-        <div class="title fredoka-300">
-            <h1><i class="fa-regular fa-hand-back-fist"></i>  <span class="gradient-text">Drag & Hue</span></h1>
-        </div>
-        <div class="subtitle">
-            <h6>A series of simple drag and drop tools to visualize visual images.</h6>
-        </div>
-
-        <!-- Anchored sections -->
-        <div id="multiple-files" class="category">
-            <h4>Multiple Files</h4>
-        </div>
-        <div class="container">
-            <div class="image-link">
-                <a href="01_listmaker.html">
-                    <img src="listmaker.jpg" alt="Listmaker Image">
-                </a>
-                <p>Listmaker</p>
-            </div>
-
-            <div class="image-link">
-                <a href="02_drag_and_mosaic.html">
-                    <img src="drag_and_mosaic.jpg" alt="Mosaic Image">
-                </a>
-                <p>Mosaic</p>
-            </div>
-
-            <div class="image-link">
-                <a href="03_drag_and_bars.html">
-                    <img src="drag_and_bars.jpg" alt="Bars Image">
-                </a>
-                <p>Bars</p>
-            </div>
-
-            <div class="image-link">
-                <a href="08_drag_and_bars_ordered.html">
-                    <img src="drag_and_bars_ordered.png" alt="Ordered Bars Image">
-                </a>
-                <p>Ordered Bars</p>
-            </div> 
-
-            <div class="image-link">
-                <a href="04_drag_and_plot.html">
-                    <img src="drag_and_plot.jpg" alt="Plot Image">
-                </a>
-                <p>Plot</p>
-            </div>
-
-            <div class="image-link">
-                <a href="05_drag_and_circles.html">
-                    <img src="drag_and_circles.jpg" alt="Circles Image">
-                </a>
-                <p>Circles</p>
-            </div>
-
-            <div class="image-link">
-                <a href="06_drag_and_voronoi.html">
-                    <img src="drag_and_voronoi.jpg" alt="Voronoi Image">
-                </a>
-                <p>Voronoi</p>
-            </div>
-        </div>
-
-        <div id="single-file" class="category">
-            <h4>Single File</h4>
-        </div>
-        <div class="container">
-            <div class="image-link">
-                <a href="07_drag_and_cone.html">
-                    <img src="drag_and_cone.jpg" alt="Cone Image">
-                </a>
-                <p>Cone</p>
-            </div>
-        </div>
-
-        <div id="coming-soon" class="category">
-            <h4>Coming Soon</h4>
-        </div>
-        <div class="container">
-            <ul>
-                <li>Drag & Cube</li>
-                <li>Drag & Rings</li>
-                <li>Drag & Mountains</li>
-                <li>Drag & Rays</li>
-                <li>Drag & Bubbles</li>
-                <li>Drag & Orbit</li>
-                <li>Drag & Sort Pixels</li>
-            </ul>                
-        </div>
-
-        <div id="further" class="category">
-            <h4>Future Improvements</h4>
-        </div>
-        <div class="container">
-            <ul>
-                <li>Image Counter</li>
-                <li>Save Screen</li>
-                <li>Preview Images</li>
-            </ul>
-        </div>
-
-        <!-- Footer -->
-        <footer class="lora-400">
-            <p><a href="http://ereyes.net">E. Reyes</a>, Paris, 2024. </p>
-            <p>This tool is for scientific and educational purposes only. This site does not track your data.</p>
-            <p>Like It? Cite It: </p>
-            <p>Reyes, Everardo (2024). <em>Drag & Hue (0.1)</em>. Zenodo. <br> <a href="https://doi.org/10.5281/zenodo.13835746">https://doi.org/10.5281/zenodo.13835746</a>
-            <br> <a href="https://doi.org/10.5281/zenodo.13835746" target="_blank"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.13835746.svg" alt="DOI"></a>
-            &nbsp;
-            <button id="showCodeBtn">BibTeX</button>
-            </p>
-            <p><i class="fa-brands fa-github"></i> <a href="https://github.com/ereyes/drag_and_hue">https://github.com/ereyes/drag_and_hue</a></p>
-            <p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://ereyes.github.io/drag_and_hue/">Drag & Hue</a> by <a rel="cc:attributionURL dct:creator" property="cc:attributionName" href="https://ereyes.net/">Everardo Reyes</a> is licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">Creative Commons Attribution-ShareAlike 4.0 International<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p> 
-        </footer>
-    
-</div>
-
-<!-- The Modal -->
-<div id="codeModal" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <pre>
-            <code>
-@software{reyes_2024_13835746,
-author       = {Reyes, Everardo},
-title        = {Drag \& Hue},
-month        = sep,
-year         = 2024,
-publisher    = {Zenodo},
-version      = {0.1},
-doi          = {10.5281/zenodo.13835746},
-url          = {https://doi.org/10.5281/zenodo.13835746}
-}
-            </code>
-        </pre>
     </div>
-</div>
 
-<script>
-    // Get the modal
-    var modal = document.getElementById("codeModal");
+    <script>
 
-    // Get the button that opens the modal
-    var btn = document.getElementById("showCodeBtn");
+        // Open link upon selection in the dropdown menu
+        function openHtml(filename) {
+            if (filename !== 'Choose...') {
+                window.location.href = filename;
+            }
+        }
 
-    // Get the <span> element that closes the modal
-    var span = document.getElementsByClassName("close")[0];
+        // Modal window script
+        var modal = document.getElementById("codeModal");
 
-    // When the user clicks the button, open the modal 
-    btn.onclick = function() {
-        modal.style.display = "flex";
-    }
+        // Get the button that opens the modal
+        var btn = document.getElementById("showCodeBtn");
 
-    // When the user clicks on <span> (x), close the modal
-    span.onclick = function() {
-        modal.style.display = "none";
-    }
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
 
-    // When the user clicks anywhere outside of the modal, close it
-    window.onclick = function(event) {
-        if (event.target == modal) {
+        // When the user clicks the button, open the modal 
+        btn.onclick = function() {
+            modal.style.display = "flex";
+        }
+
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
             modal.style.display = "none";
         }
-    }
-</script>
-      </div>
-    </div>
-  </div>
 
-  <!-- Bootstrap JS and dependencies -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
