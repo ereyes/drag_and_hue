@@ -29,12 +29,20 @@
         font-variation-settings:
             "wdth" 100;
         }
+        @media (min-width: 400px) {
+            .responsive-text-credits {
+                font-size: 0.7rem;
+            }
+        }
         @media (min-width: 768px) {
             .responsive-text {
                 font-size: 1.5rem;
             }
             .responsive-title {
                 font-size: 2.5rem;
+            }
+            .responsive-text-credits {
+                font-size: 0.8rem;
             }
         }
         @media (min-width: 1200px) {
@@ -43,6 +51,9 @@
             }
             .responsive-title {
                 font-size: 3.5rem;
+            }
+            .responsive-text-credits {
+                font-size: 1.0rem;
             }
         }
         .section-bg {
@@ -223,15 +234,15 @@
     </div>
 
     <footer class="footer-bg lora-400">
-        <p>This tool is for scientific and educational purposes only. This site does not track your data.</p>
-        <p> <strong>Reyes</strong>, Everardo (2024). <em>Drag & Hue (0.1)</em>. Zenodo. <br> <a href="https://doi.org/10.5281/zenodo.13835746">https://doi.org/10.5281/zenodo.13835746</a>
+        <p class="responsive-text-credits">This tool is for scientific and educational purposes only. This site does not track your data.</p>
+        <p class="responsive-text-credits"> <strong>Reyes</strong>, Everardo (2024). <em>Drag & Hue (0.1)</em>. Zenodo. <br> <a href="https://doi.org/10.5281/zenodo.13835746">https://doi.org/10.5281/zenodo.13835746</a>
         <br> <a href="https://doi.org/10.5281/zenodo.13835746" target="_blank"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.13835746.svg" alt="DOI"></a>
         &nbsp;
         <button id="showCodeBtn">BibTeX</button>
         </p>
-        <p><i class="fa-brands fa-github"></i> <a href="https://github.com/ereyes/drag_and_hue">https://github.com/ereyes/drag_and_hue</a></p>
-        <p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://ereyes.github.io/drag_and_hue/">Drag & Hue</a> by <a rel="cc:attributionURL dct:creator" property="cc:attributionName" href="https://ereyes.net/">Everardo Reyes</a> is licensed under <br> <a href="https://creativecommons.org/licenses/by-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">Creative Commons Attribution-ShareAlike 4.0 International<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>
-        <p><a href="http://ereyes.net">E. Reyes</a>, Paris, 2024. </p>
+        <p class="responsive-text-credits"><i class="fa-brands fa-github"></i> <a href="https://github.com/ereyes/drag_and_hue">https://github.com/ereyes/drag_and_hue</a></p>
+        <p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"  class="responsive-text-credits"><a property="dct:title" rel="cc:attributionURL" href="https://ereyes.github.io/drag_and_hue/">Drag & Hue</a> by <a rel="cc:attributionURL dct:creator" property="cc:attributionName" href="https://ereyes.net/">Everardo Reyes</a> is licensed under <br> <a href="https://creativecommons.org/licenses/by-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">Creative Commons Attribution-ShareAlike 4.0 International<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>
+        <p class="responsive-text-credits"><a href="http://ereyes.net">E. Reyes</a>, Paris, 2024. </p>
     </footer>
 
     <!-- The Modal -->
