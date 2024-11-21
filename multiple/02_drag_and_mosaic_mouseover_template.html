@@ -1,0 +1,359 @@
+<!-- *************************
+    A mini tool to generate a mosaic of colors from one or various image files. 
+    ereyes.github.io
+    Paris, 02.2024
+    License: Creative Commons CC BY-SA 4.0
+    ************************* -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag and Mosaic</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+        integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .lora-400 {
+            font-family: "Lora", serif;
+            font-optical-sizing: auto;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        .fredoka-300 {
+            font-family: "Fredoka", sans-serif;
+            font-optical-sizing: auto;
+            font-weight: 300;
+            font-style: normal;
+            font-variation-settings: "wdth"100;
+        }
+
+        .top-banner {
+            background-color: white;
+            width: 100%;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            border-bottom: 3px black solid;
+            cursor: pointer;
+        }
+
+        .top-banner h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .content-wrapper {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 20px;
+            max-width: 700px;
+            margin: 40px auto;
+            box-sizing: border-box;
+        }
+
+        #instructions-section {
+            text-align: left;
+            flex: 1;
+        }
+
+        #instructions-section h1 {
+            font-size: 1.25rem;
+        }
+
+        #drop_zone {
+            border: 2px dashed coral;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: linen;
+            color: #495057;
+            text-align: left;
+            width: 300px;
+        }
+
+        #drop_zone:hover {
+            background-color: #e9ecef;
+            border-color: #495057;
+        }
+
+        #drop_zone input {
+            margin-top: 10px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 800px) {
+            .content-wrapper {
+                flex-direction: column;
+                gap: 10px;
+                padding-left: 20px;
+            }
+
+            #instructions-section,
+            #drop_zone {
+                flex: none;
+                width: 90%;
+            }
+
+            .top-banner h1,
+            #instructions-section h1 {
+                font-size: 1rem;
+            }
+
+            #instructions-section p {
+                font-size: 0.9rem;
+            }
+
+            #drop_zone {
+                padding: 15px;
+                font-size: 0.9rem;
+            }
+        }
+
+        #image_count {
+            clear: both;
+            padding-left: 10px;
+        }
+
+        #image_container {
+            clear: both;
+            padding-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <div class="top-banner text-start">
+        <h1 class="fredoka-300" onclick="location ='https://ereyes.github.io/drag_and_hue/'">
+            Drag
+            <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="Logo" class="mx-2" style="height:20px;">
+            Hue
+        </h1>
+    </div>
+
+    <div class="content-wrapper">
+        <section id="instructions-section">
+            <div id="welcome">
+                <h1 class="lora-400">Drag & <span style="color: tomato;"> <strong>Mosaic</strong> </span></h1>
+                <p class="lora-400">A simple drag and drop tool to generate a mosaic of colors from one or various image
+                    files.</p>
+                <p class="lora-400">Images are shown as squares. Their color is the most frequent in the image.</p>
+                <p class="lora-400">The size of squares is calculated according to the amount of images and the size of
+                    your screen.</p>
+                <p class="lora-400">The mosaic of images itself will always try to keep a square shape.</p>
+                <p><a href="https://ereyes.github.io/drag_and_hue/"><i class="fa-solid fa-chevron-left"></i> Back to all
+                        Drag & Hue tools</a></p>
+            </div>
+        </section>
+
+        <section>
+            <div id="drop_zone" ondrop="drop(event)" ondragover="allowDrop(event)">
+                Drag & drop image(s) or <br>
+                <input type="file" id="fileInput" multiple onchange="loadImages(event)">
+            </div>
+        </section>
+    </div>
+
+    <div id="image_count"></div>
+    <div id="image_container"></div>
+    <div id="loading_message" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:1000; background:#fff; border:1px solid #ccc; padding:20px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); font-size:18px; color:#333;">
+        <i class="fa fa-spinner fa-spin" style="font-size:24px"></i> Processing images... Please wait.
+    </div>
+    
+    <div id="image_preview"
+        style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:20000; max-width:90%; max-height:90%; background:#fff; border:2px solid #ccc; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); padding:10px;">
+        <img id="preview_img" src="" alt="Preview" style="max-width:100%; max-height:100%;">
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <script>
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            var files = event.dataTransfer.files;
+            loadImagesFromFileList(files);
+        }
+
+        function loadImages(event) {
+            var files = event.target.files;
+            loadImagesFromFileList(files);
+        }
+
+        function loadImagesFromFileList(files) {
+            document.querySelector('.content-wrapper').style.display = 'none';
+            document.querySelector('.top-banner').style.display = 'none';
+            var space = document.createElement('div');
+            var totalImages = files.length;
+            var imageData = []; // To store image and its color data
+
+            var pageWidth = window.innerWidth - 20;
+            var pageHeight = window.innerHeight - 20;
+
+            // Choose the smaller of the width or height to base the grid on
+            var columns = Math.ceil(Math.sqrt(totalImages));
+            var rows = Math.ceil(totalImages / columns);
+
+            // Ensure the tiles are squares: set both width and height to be the same
+            var squareSize = Math.min(pageWidth / columns, pageHeight / rows);
+
+            var processedCount = 0;
+
+            // Show the loading message
+            var loadingMessage = document.getElementById('loading_message');
+            loadingMessage.style.display = 'block';
+
+            for (var i = 0; i < totalImages; i++) {
+                if (files[i].type.match('image.*')) {
+                    var reader = new FileReader();
+
+                    reader.onload = (function(index) {
+                        return function(e) {
+                            getColor(e.target.result, function(color) {
+                                var hsl = rgbToHsl(color[0], color[1], color[2]);
+                                imageData.push({
+                                    src: e.target.result,
+                                    color: color,
+                                    hsl: hsl
+                                });
+
+                                processedCount++;
+                                if (processedCount === totalImages) {
+                                    // All images processed, now sort and create the mosaic
+                                    imageData.sort((a, b) => {
+                                        if (a.hsl[1] !== b.hsl[1]) {
+                                            // Sort by saturation (HSL[1])
+                                            return b.hsl[1] - a.hsl[1];
+                                        }
+                                        // If saturation is equal, sort by hue (HSL[0])
+                                        return a.hsl[0] - b.hsl[0];
+                                    });
+
+                                    // Create the mosaic
+                                    imageData.forEach((data, index) => {
+                                        var colorDisplay = document.createElement('div');
+                                        colorDisplay.className = 'color_display';
+                                        colorDisplay.style.backgroundColor = 'rgba(' + data.color[0] + ',' + data.color[1] + ',' + data.color[2] + ', 0.8)';
+
+                                        // Set size to ensure each mosaic is a square
+                                        colorDisplay.style.width = squareSize + 'px';
+                                        colorDisplay.style.height = squareSize + 'px';
+                                        
+
+                                        // Position the squares in a grid
+                                        colorDisplay.style.position = 'absolute';
+                                        colorDisplay.style.left = (index % columns) * squareSize + 'px';
+                                        colorDisplay.style.top = Math.floor(index / columns) * squareSize + 'px';
+
+                                        // Add hover effect to display the full image
+                                        colorDisplay.addEventListener('mouseover', function() {
+                                            colorDisplay.style.backgroundImage = 'url(' + data.src + ')';
+                                            colorDisplay.style.backgroundSize = 'cover';
+                                            colorDisplay.style.backgroundPosition = 'center';
+                                        });
+
+                                        colorDisplay.addEventListener('mouseout', function() {
+                                            colorDisplay.style.backgroundImage = '';
+                                        });
+
+                                        // Add click event to display the larger preview
+                                        colorDisplay.addEventListener('click', function(event) {
+                                            event.stopPropagation(); // Prevent closing the preview immediately
+                                            var previewContainer = document.getElementById('image_preview');
+                                            var previewImage = document.getElementById('preview_img');
+                                            previewImage.src = data.src;
+                                            previewContainer.style.display = 'block';
+                                        });
+
+                                        space.appendChild(colorDisplay);
+                                    });
+
+                                    // Hide the loading message
+                                    loadingMessage.style.display = 'none';
+
+                                    // Append the mosaic to the container
+                                    document.body.style.backgroundColor = "#eee";
+                                    document.body.style.overflow = "hidden";
+                                    space.style.position = "relative"; // Ensure the squares are positioned relative to this div
+                                    space.style.width = pageWidth + "px";
+                                    space.style.height = pageHeight + "px";
+
+                                    document.getElementById('image_container').appendChild(space);
+                                    document.getElementById('image_container').style.zIndex = 10000;
+                                    document.getElementById('image_count').innerHTML = 'You added ' + totalImages + ' images. <button onclick="location.reload();">Restart</button>';
+
+                                }
+                            });
+                        };
+                    })(i);
+                    reader.readAsDataURL(files[i]);
+                }
+            }
+        }
+
+
+        function getColor(imageSrc, callback) {
+            var image = document.createElement('img');
+            image.onload = function () {
+                var colorThief = new ColorThief();
+                var dominantColor = colorThief.getColor(image);
+                if (typeof callback === 'function') {
+                    callback(dominantColor);
+                }
+            };
+            image.src = imageSrc;
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255, g /= 255, b /= 255;
+            var max = Math.max(r, g, b), min = Math.min(r, g, b);
+            var h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                var d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
+        document.addEventListener('click', function () {
+            var previewContainer = document.getElementById('image_preview');
+            previewContainer.style.display = 'none';
+        });
+
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
