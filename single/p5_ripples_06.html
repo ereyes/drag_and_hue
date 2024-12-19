@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Water Ripples</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.umd.js" integrity="sha512-r2yd2GP87iHAsf2K+ARvu01VtR7Bs04la0geDLbFlB/38AruUbA5qfmtXwXx6FZBQGJRogiPtEqtfk/fnQfaYA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #888888; /* Gray background */
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+        }
+        #thumbnail {
+            position: absolute;
+            top: calc(50% + 100px);
+            left: 50%;
+            transform: translate(-50%, 0);
+            max-width: 200px;
+            max-height: 200px;
+            border: 2px solid #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .file-input {
+            margin-top: 10px;
+            display: inline-block;
+            background-color: #fff;
+            color: #444;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            position: relative;
+        }
+        .file-input input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        let ripples = [];
+        let bgColor = [136, 136, 136];
+        let rippleColors = [[173, 216, 230]];
+        let imgElement;
+        let imageColors = false;
+        let thumbnail;
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            noFill();
+
+            // Add drag-and-drop functionality
+            let dropZone = createDiv('drop an image here   ');
+            dropZone.style('position', 'absolute');
+            dropZone.style('top', '50%');
+            dropZone.style('left', '50%');
+            dropZone.style('transform', 'translate(-50%, -50%)');
+            dropZone.style('padding', '20px');
+            dropZone.style('background-color', '#444');
+            dropZone.style('opacity', '0.8');
+            dropZone.style('color', '#fff');
+            dropZone.style('border', '2px dashed gray');
+            dropZone.style('text-align', 'center');
+            dropZone.dragOver(() => dropZone.style('background-color', '#666'));
+            dropZone.dragLeave(() => dropZone.style('background-color', '#444'));
+            dropZone.drop(gotFile);
+
+            // Create a file input for mobile users
+            let fileInputDiv = createDiv('');
+            fileInputDiv.class('file-input');
+            fileInputDiv.parent(dropZone);
+            fileInputDiv.html('select a file<input type="file" accept="image/*" onchange="handleFileSelect(event)">');
+
+            // Create a placeholder for the thumbnail
+            thumbnail = createImg('', 'Thumbnail Preview');
+            thumbnail.id('thumbnail');
+            thumbnail.hide();
+        }
+
+        function draw() {
+            background(imageColors ? bgColor : [136, 136, 136]);
+
+            // Randomly add new ripples at random positions
+            if (frameCount % 10 === 0) {
+                let randomX = random(width);
+                let randomY = random(height);
+                let colorIndex = floor(random(rippleColors.length));
+                ripples.push(new Ripple(randomX, randomY, rippleColors[colorIndex]));
+            }
+
+            for (let i = ripples.length - 1; i >= 0; i--) {
+                ripples[i].update();
+                ripples[i].show();
+
+                if (ripples[i].isFinished()) {
+                    ripples.splice(i, 1);
+                }
+            }
+        }
+
+        class Ripple {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.radius = 0;
+                this.alpha = 255;
+                this.color = color;
+            }
+
+            update() {
+                this.radius += 2;
+                this.alpha -= 2;
+            }
+
+            show() {
+                stroke(...this.color, this.alpha);
+                ellipse(this.x, this.y, this.radius * 2);
+            }
+
+            isFinished() {
+                return this.alpha <= 0;
+            }
+        }
+
+        function gotFile(file) {
+            if (file.type === 'image') {
+                imgElement = createImg(file.data, '').hide();
+                imgElement.elt.onload = () => {
+                    analyzeImage(imgElement.elt);
+                    thumbnail.attribute('src', file.data);
+                    thumbnail.show();
+                };
+            } else {
+                console.log('Not an image file.');
+            }
+        }
+
+        function handleFileSelect(event) {
+            let file = event.target.files[0];
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    gotFile({ type: 'image', data: e.target.result });
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function analyzeImage(img) {
+            let colorThief = new ColorThief();
+            let colors = colorThief.getPalette(img, 5);
+            if (colors && colors.length > 0) {
+                bgColor = colors[0];
+                rippleColors = colors.slice(1, 5); // Use the 2nd to 5th most representative colors
+                imageColors = true;
+            }
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+    </script>
+</body>
+</html>
