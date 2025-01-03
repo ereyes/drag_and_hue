@@ -1,189 +1,382 @@
 <!-- *************************
-    A mini tool to generate a plot of images and colors various image files. 
-    ereyes.github.io
-    Paris, 02.2024
+    Drag & Plot
+    A mini tool to plot various image files according to their hue, saturation, and brightness values. 
+    ereyes.github.io, Paris
+    v01 - 02.2024
+    v02 - 01.2025
     License: Creative Commons CC BY-SA 4.0
-    ************************* -->
-
+    ************************* 
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Drag and Plot</title>
-<style>
-    * { box-sizing: border-box;}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Image Plot</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://ereyes.github.io/drag_and_hue/style_and_hue.css">
+    <link rel="icon" href="https://ereyes.github.io/drag_and_hue/logo.png">
+    <style>
+        body {
+            margin: 20px;
+            text-align: center;
+        }
+        #drop-zone {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            margin: 20px auto;
+            width: 80%;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            position: relative;
+        }
+        #drop-zone.dragover {
+            background-color: #e0f7fa;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        label {
+            display: inline-block;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 1px solid gray;
+            padding: 0.2em;
+        }
 
-    #welcome {
-        width:250px;
-        float:left;
-        margin-left: 20px;
-    }
-    #welcome p {
-        color:#888;
-    }
-    #drop_zone {
-        width: 270px;
-        height:250px;
-        border: 2px dashed #ccc;
-        margin-left: 50px;
-        margin-top: 30px;
-        text-align: left;
-        line-height: 30px;
-        padding:2em;
-        float: left;
-    }
-    #image_count {
-        clear: both;
-    }
+        canvas {
+            border: 2px dashed #ccc;
+            background-color: #f9f9f9;
+            margin:10px auto;
+            display: block;
+        }
+        canvas.dragover {
+            background-color: #e0f7fa;
+        }
+        #preview {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+            z-index: 10;
+        }
+        #preview img {
+            max-width: 50%;
+            max-height: 50%;
+            border: 2px solid white;
+        }
+        #controls {
+            margin-bottom:100px;
+        }
+        button, label {
+            background: linear-gradient(to left, #eee, #fff);
+            margin-right: 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 1px solid gray;
+        }
 
-    #image_container {
-        clear: both;
-    }
+        #file-count {
+            font-size: 14px;
+            margin-left: 10px;
+            color: #555;
+        }
+        #controls {
+            margin-top: 20px; /* Add space between the canvas and controls */
+            text-align: center; /* Align the controls to the center */
+        }
+        @media (max-width: 768px) {
+            #drop-zone {
+                width: 90%; /* Increase width for smaller screens */
+                padding: 2%; /* Increase padding for better spacing */
+            }
+        }
 
-    .thumbnail {
-        width: 25px;
-        height: 25px;
-    }
-
-    .thumbnail:hover {
-        width: 100px;
-        height: 100px;
-        transition: width 0.5s, height 0.5s;
-    }
-    .color_display {
-        width: 35px;
-        height: 35px;
-        position: absolute;
-        padding: 5px;
-    }
-
-    .color_values {
-        text-align: center;
-    }
-
-
-
-</style>
+        @media (max-width: 480px) {
+            #drop-zone {
+                width: 90%; /* Take full width on very small screens */
+                padding: 5%; /* Further adjust padding */
+            }
+        }
+    </style>
 </head>
-<body>
+<body class="lora-400">
+    <div class="content-wrapper" style="margin-bottom: 0;">
+        <section id="instructions-section">
 
-    <div id="instructions">
-        <div id="welcome">
-            <h1>Drag & <span style="color: tomato;">Plot</span> </h1>
-            <p>A simple drag and drop tool to plot image files.</p>
-            <p>Horizontal position corresponds to the hue.</p>
-            <p>Vertical position corresponds to lightness.</p>
-            <p>Mouse over to see a bigger preview of the picture.</p>
-            <p><a href="https://ereyes.github.io/drag_and_hue/">Back to all Drag & Hue tools.</a></p>
-        </div>
-    
-        <div id="drop_zone" ondrop="drop(event)" ondragover="allowDrop(event)">
-            Drag & drop image(s) or <br>
-            <input type="file" id="fileInput" multiple onchange="loadImages(event)">
-        </div>
+                <h4>Drag & <span style="color: tomato;"> <strong>Plot</strong></span></h4>
+                <p>A simple tool to create a plot of images based on their hue, saturation and brightness.</p>
+                <p>Use the drop zone or the select button to upload images.</p>
+                <p>Drag and drop images directly onto the canvas.</p>
+                <p>
+                    <a href="https://ereyes.github.io/drag_and_hue/"><i class="fa-solid fa-chevron-left"></i> 
+                        Back to <strong>Drag</strong> <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="d&h logo" width="30px"><strong>Hue</strong></a>
+                </p>
+        </section>
+        <section>
+            <div id="drop-zone" ondragover="event.preventDefault();" ondrop="handleDropZone(event)">
+                <p>Drop images here or use the button to select files</p>
+                <label for="file-input"><i class="fa-regular fa-folder-open"></i> add images</label>
+                <input id="file-input" type="file" accept="image/*" multiple onchange="handleFiles(this.files)">
+            </div>
+        </section>
     </div>
 
-<div id="image_count"></div>
-<div id="image_container"></div>
+    <div id="canvas-container"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
-<script>
-    function allowDrop(event) {
-        event.preventDefault();
-    }
-
-    function drop(event) {
-        event.preventDefault();
-        var files = event.dataTransfer.files;
-        loadImagesFromFileList(files);
-    }
-
-    function loadImages(event) {
-        var files = event.target.files;
-        loadImagesFromFileList(files);
-    }
-
-    function loadImagesFromFileList(files) {
-        var space = document.createElement('div');
+    <div id="controls">
+        <span id="file-count">No files added</span>
+        <label for="file-input"><i class="fa-regular fa-folder-open"></i> add images</label>
+        <input id="file-input" type="file" accept="image/*" multiple onchange="handleFiles(this.files)">
         
-        for (var i = 0; i < files.length; i++) {
-            if (files[i].type.match('image.*')) {                
+        <span for="y-axis-select">Vertical axis:</span>
+        <select id="y-axis-select" onchange="redraw()">
+            <option value="saturation" selected>Saturation</option>
+            <option value="brightness">Brightness</option>
+        </select>
 
-                var reader = new FileReader();
+        <button onclick="saveCanvas('image_plot', 'png')"><i class="fa-solid fa-download"></i> save canvas</button>
 
-                reader.onload = (function(index) {
-                        var viz;
-                    return function(e) {
+        <button onclick="location.reload();"><i class="fa-solid fa-repeat"></i> restart</button>
+    </div>
 
-                        var image = document.createElement('img');
-                        image.src = e.target.result;
-                        image.className = 'thumbnail';
-                        //cell1.appendChild(image);
+    <div id="preview" onclick="closePreview()">
+        <img id="preview-image" src="" alt="Preview">
+    </div>
 
-                        getColor(e.target.result, function(color) {
-                            var hslComponents = rgbToHsl(color[0], color[1], color[2]);
-                            var colorDisplay = document.createElement('div');
-                            var image = document.createElement('img');
-                            image.src = e.target.result;
-                            image.className = 'thumbnail';
-                            colorDisplay.className = 'color_display';
-                            colorDisplay.style.backgroundColor = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ', 0.6)';
-                            colorDisplay.style.left = 150 + (hslComponents[0] * 10 % window.innerWidth - 200) + 'px';
-                            colorDisplay.style.top =  150 + (hslComponents[1] * 10 % window.innerHeight - 200) + 'px';
-                            colorDisplay.appendChild(image);
-                            space.appendChild(colorDisplay);
+    <script>
+        let images = [];
+        let colors = [];
+        const canvasWidth = 800;
+        const canvasHeight = 700;
+        let canvasElement;
+        let yAxisMetric = "saturation"; // Default Y-axis metric
+
+        // Update file count text
+        function updateFileCount() {
+            const fileCount = images.length;
+            const fileCountElement = document.getElementById("file-count");
+            fileCountElement.textContent = fileCount === 0
+                ? "No files added"
+                : `${fileCount} file${fileCount > 1 ? "s" : ""} added`;
+        }
+
+        // p5.js setup
+        function setup() {
+            const canvasElement = createCanvas(windowWidth * 0.8, windowHeight * 0.7); // Create a responsive canvas
+            canvasElement.parent('canvas-container'); // Attach it to the container
+
+            canvasElement.drop(handleDrop); // Enable drag-and-drop functionality on the canvas
+            noLoop(); // Prevent automatic looping of draw
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth * 0.8, windowHeight * 0.7); // Adjust canvas size to window
+            redraw(); // Redraw the canvas to update the layout
+        }
+
+        // Add horizontal gradient line (Hue spectrum)
+        function drawHorizontalGradientLine() {
+            let xStart = 50; // Starting x-coordinate of the line
+            let yStart = height - 45; // Starting y-coordinate of the line
+            let xEnd = width - 50;   // Ending x-coordinate of the line
+            let yEnd = height - 45;   // Ending y-coordinate of the line
+            let lineLength = dist(xStart, yStart, xEnd, yEnd); // Length of the line
+
+            colorMode(HSB, 360, 100, 100); // Use HSB color mode with max hue 360
+
+            for (let i = 0; i <= lineLength; i++) {
+                let lerpVal = i / lineLength; // Normalize the position along the line
+                let hue = lerp(0, 360, lerpVal); // Interpolate the hue from 0 to 360
+                stroke(hue, 100, 100); // Set stroke color
+                strokeWeight(2); // Line thickness
+
+                // Interpolate position along the line
+                let x = lerp(xStart, xEnd, lerpVal);
+                point(x, yStart); // Draw a point at the calculated position
+            }
+
+            colorMode(RGB); // Reset color mode to RGB after drawing
+        }
 
 
-                        });
+        function draw() {
+            yAxisMetric = document.getElementById("y-axis-select").value; // Get selected metric
+            background(240);
+            textSize(12);
+            fill(0);
+
+            // Draw axes
+            stroke(0);
+            strokeWeight(1);
+            line(50, height - 50, width - 50, height - 50); // X-axis
+            line(50, height - 50, 50, 50); // Y-axis
+
+            // Draw horizontal gradient line
+            drawHorizontalGradientLine();
+
+            // Add vertical gradient line (Black to White)
+            for (let y = height - 50; y > 50; y--) {
+                let gray = map(y, height - 50, 50, 0, 255);
+                stroke(gray);
+                line(48, y, 52, y); // Thinner gradient with reduced width
+            }
+
+            // Add labels for axes
+            noStroke();
+            textAlign(CENTER);
+            text("Hue", width / 2, height - 20);
+
+            push(); // Save transformation state
+            translate(20, height / 2);
+            rotate(-HALF_PI); // Rotate text
+            textAlign(CENTER);
+            text(yAxisMetric.charAt(0).toUpperCase() + yAxisMetric.slice(1), 0, 0); // Dynamically set the vertical legend
+            pop(); // Restore transformation state
+
+            // Add axis tick labels
+            textAlign(CENTER);
+            for (let i = 0; i <= 360; i += 120) {
+                const x = map(i, 0, 360, 50, width - 50);
+                text(i, x, height - 35);
+            }
+
+            textAlign(RIGHT);
+            for (let i = 0; i <= 100; i += 50) {
+                const y = map(i, 0, 100, height - 50, 50);
+                text(i, 45, y + 5);
+            }
+
+            // Dynamically adjust image size
+            const imageSize = Math.min(40, 200 / Math.sqrt(images.length)); // Decrease size with more images
+
+            // Plot images
+            images.forEach(({ img, hsl, file }, index) => {
+                const x = map(hsl[0], 0, 360, 50, width - 50); // Hue to X
+                const y = yAxisMetric === "saturation"
+                    ? map(hsl[1], 0, 100, height - 50, 50) // Saturation to Y
+                    : map(hsl[2], 0, 100, height - 50, 50); // Brightness to Y
+
+                image(img, x - imageSize / 2, y - imageSize / 2, imageSize, imageSize); // Adjust size
+
+                // Store clickable bounds for later mousePressed() check
+                images[index].x = x;
+                images[index].y = y;
+                images[index].size = imageSize;
+            });
+        }
+
+
+
+        // Handle drop on canvas
+        function handleDrop(file) {
+            if (file.type === 'image') {
+                const img = new Image();
+                img.src = file.data;
+                img.onload = () => extractColor(img, file.file);
+            }
+        }
+
+        // Handle drop on drop zone
+        function handleDropZone(event) {
+            event.preventDefault();
+            handleFiles(event.dataTransfer.files);
+        }
+
+        // Handle file selection
+        function handleFiles(files) {
+            Array.from(files).forEach((file) => {
+                if (file.type.startsWith('image/')) {
+                    const img = new Image();
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        img.src = e.target.result;
+                        img.onload = () => extractColor(img, file);
                     };
-                })(i);
-                reader.readAsDataURL(files[i]);
-            }
+                    reader.readAsDataURL(file);
+                }
+            });
         }
-        document.getElementsByTagName('body')[0].style.backgroundColor = "#eee";
-        document.getElementById('image_container').appendChild(space);
-        document.getElementById('instructions').style.display = 'none';
-        document.getElementById('image_container').style.zIndex = 10000;
-        document.getElementById('image_count').innerHTML = 'You added ' + i + ' images. Add more... <input type="file" id="fileInput" multiple onchange="loadImages(event)">';
-    }
 
-    function getColor(imageSrc, callback) {
-        var image = document.createElement('img');
-        image.onload = function() {
-            var colorThief = new ColorThief();
-            var dominantColor = colorThief.getColor(image);
-            if (typeof callback === 'function') {
-                callback(dominantColor);
-            }
-        };
-        image.src = imageSrc;
-    }
+        function extractColor(img, file) {
+            const colorThief = new ColorThief();
+            const rgb = colorThief.getColor(img);
+            const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
 
-    function rgbToHsl(r, g, b) {
-        r /= 255, g /= 255, b /= 255;
-        var max = Math.max(r, g, b), min = Math.min(r, g, b);
-        var h, s, l = (max + min) / 2;
+            // Convert HTML Image to p5 Image
+            const p5Image = createImage(img.width, img.height);
+            p5Image.drawingContext.drawImage(img, 0, 0, img.width, img.height);
 
-        if (max === min) {
-            h = s = 0;
-        } else {
-            var d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
-            }
-            h /= 6;
+            images.push({ img: p5Image, hsl, file });
+            colors.push(hsl);
+            updateFileCount(); // Update file count display
+            redraw(); // Trigger p5.js redraw
         }
-        return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
-    }
 
-    function rgbToHex(r, g, b) {
-        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-    }
-</script>
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0; // achromatic
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+        }
+
+        // Handle clicks
+        function mousePressed() {
+            images.forEach(({ file, x, y, size }) => {
+                if (dist(mouseX, mouseY, x, y) < size / 2) {
+                    showPreview(file);
+                }
+            });
+        }
+
+        // Show preview function
+        function showPreview(file) {
+            const preview = document.getElementById("preview");
+            const previewImage = document.getElementById("preview-image");
+            previewImage.src = URL.createObjectURL(file);
+            preview.style.visibility = "visible";
+        }
+
+        // Close preview function
+        function closePreview() {
+            const preview = document.getElementById("preview");
+            preview.style.visibility = "hidden";
+        }
+    </script>
 
 </body>
 </html>
