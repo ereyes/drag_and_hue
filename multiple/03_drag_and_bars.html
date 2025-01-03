@@ -1,189 +1,283 @@
 <!-- *************************
-    A mini tool to generate a color bar code from one or various image files. 
-    ereyes.github.io
-    Paris, 02.2024
+    Drag and Bars
+    A mini tool to generate a bar of colors from one or various image files. 
+    ereyes.github.io, Paris
+    v01 - 02.2024
+    v02 - 01.2025
     License: Creative Commons CC BY-SA 4.0
-    ************************* -->
+    ************************* 
+-->
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Drag and Bars</title>
-<style>
-    * { box-sizing: border-box;}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag and Bars</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.min.js" integrity="sha512-r2yd2GP87iHAsf2K+ARvu01VtR7Bs04la0geDLbFlB/38AruUbA5qfmtXwXx6FZBQGJRogiPtEqtfk/fnQfaYA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+    rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://ereyes.github.io/drag_and_hue/style_and_hue.css">
+    <link rel="icon" href="https://ereyes.github.io/drag_and_hue/logo.png">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        #canvas-container {
+            width: 90%;
+            height:60%;
+            position: relative;
+            margin-bottom:10px;
+        }
+        #canvas-container p {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #999;
+            border: 1px dashed gray;
+        }
+        select {
+        }
+        button {
+            cursor: pointer;
+            margin-right: 20px;
+        }
+        #image-preview {
+            position: absolute;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 27%;
+            max-height: 27%;
+            border: 1px solid #ccc;
+            display: none;
+        }
+        /*
+        #image_count {
+            position: absolute;
+            top: 5;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #fff;
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: none;
+            font-size: 14px;
+            z-index: 10;
+        }*/
 
-    #welcome {
-        width:250px;
-        float:left;
-        margin-left: 20px;
-    }
-    #welcome p {
-        color:#888;
-    }
-    #drop_zone {
-        width: 270px;
-        height:250px;
-        border: 2px dashed #ccc;
-        margin-left: 50px;
-        margin-top: 30px;
-        text-align: left;
-        line-height: 30px;
-        padding:2em;
-        float: left;
-    }
-    #image_count {
-        clear: both;
-    }
-
-    #image_container {
-        clear: both;
-    }
-
-    .thumbnail {
-        width: 25px;
-        height: 25px;
-    }
-
-    .thumbnail:hover {
-        width: 100px;
-        height: 100px;
-        transition: width 0.5s, height 0.5s;
-    }
-    .color_display {
-        float: left;
-    }
-
-    .color_values {
-        text-align: center;
-    }
-
-
-
-</style>
+        @media (max-width: 800px) {
+            .ui-bars {
+                font-size: 70%;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
 
-    <div id="instructions">
-        <div id="welcome">
-            <h1>Drag & <span style="color: tomato;">Bars</span> </h1>
-            <p>A simple drag and drop tool to create a color bar code of colors from image files.</p>
-            <p>Bars are ordered as they are organized in your hard drive.</p>
-            <p><a href="https://ereyes.github.io/drag_and_hue/">Back to all Drag & Hue tools.</a></p>
-        </div>
-    
-        <div id="drop_zone" ondrop="drop(event)" ondragover="allowDrop(event)">
-            Drag & drop image(s) or <br>
-            <input type="file" id="fileInput" multiple onchange="loadImages(event)">
-        </div>
+    <div>
+        <section id="instructions-section">
+            <div>
+                <h1 class="lora-400">Drag & <span style="color: tomato;"> <strong>Bars</strong></span> </h1>
+                <p class="lora-400">A simple drag and drop tool to create bars of colors from image files.</p>
+
+                     <!-- Back to Home Link -->
+                    <p class="lora-400">
+                        <a href="https://ereyes.github.io/drag_and_hue/"><i class="fa-solid fa-chevron-left"></i> 
+                            Back to <strong>Drag</strong> <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="d&h logo" width="30px"><strong>Hue</strong></a>
+                    </p>
+            </div>
+        </section>
     </div>
 
-<div id="image_count"></div>
-<div id="image_container"></div>
+    
+    <div id="canvas-container">
+        <p>Drag and drop images here</p>
+    </div>
+    
+    <div class="ui-bars lora-400" style="margin-top: 0;margin-bottom:30px; max-width: 1000px;">
+        <span id="image_count" style="margin-right: 30px;"># images: <strong>0</strong></span>
+        <button id="file-selector-button"><i class="fa-regular fa-folder-open"></i> add images</button>
+        <input type="file" id="file-selector" accept="image/*" multiple style="display: none;">
+        <span>Sort bars:</span>
+        <select id="sort-selector">
+            <option value="none">None</option>
+            <option value="hue">Hue</option>
+            <option value="saturation">Saturation</option>
+            <option value="brightness">Brightness</option>
+        </select>
+        <button id="save-button"><i class="fa-solid fa-download"></i> save canvas</button>
+        <button onclick="location.reload();"><i class="fa-solid fa-repeat"></i> restart</button>
+    </div>  
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
-<script>
-    function allowDrop(event) {
-        event.preventDefault();
-    }
-
-    function drop(event) {
-        event.preventDefault();
-        var files = event.dataTransfer.files;
-        loadImagesFromFileList(files);
-    }
-
-    function loadImages(event) {
-        var files = event.target.files;
-        loadImagesFromFileList(files);
-    }
-
-    function loadImagesFromFileList(files) {
-        var space = document.createElement('div');
-        
-        for (var i = 0; i < files.length; i++) {
-            if (files[i].type.match('image.*')) {                
-
-                var reader = new FileReader();
-
-                reader.onload = (function(index) {
-                    var viz;
-                    return function(e) {
-
-                        var image = document.createElement('img');
-                        image.src = e.target.result;
-                        image.className = 'thumbnail';
-                        //cell1.appendChild(image);
-
-                        getColor(e.target.result, function(color) {
-                            var hslComponents = rgbToHsl(color[0], color[1], color[2]);
-                            var colorDisplay = document.createElement('div');
-                            var image = document.createElement('img');
-                            var pageWidth = window.innerWidth - 30;
-                            var pageHeight = window.innerHeight;
-                            image.src = e.target.result;
-                            image.className = 'thumbnail';
-                            colorDisplay.className = 'color_display';
-                            colorDisplay.style.backgroundColor = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ', 0.6)';
-                            //colorDisplay.style.left = '10px';
-                            colorDisplay.style.top =  '100px';
-                            colorDisplay.style.width = pageWidth / files.length + 'px';
-                            colorDisplay.style.height =  pageHeight - 50 + 'px';
-                            //colorDisplay.appendChild(image);
-                            space.appendChild(colorDisplay);
+    <img id="image-preview" alt="Preview">
 
 
-                        });
-                    };
-                })(i);
-                reader.readAsDataURL(files[i]);
+    <script>
+        let bars = [];
+        let images = [];
+
+        function setup() {
+            const canvas = createCanvas(windowWidth * 0.9, windowHeight * 0.6);
+            canvas.parent('canvas-container');
+            background(240);
+
+            const container = document.getElementById('canvas-container');
+            container.addEventListener('dragover', (event) => {
+                event.preventDefault();
+            });
+
+            container.addEventListener('drop', (event) => {
+                event.preventDefault();
+                const files = event.dataTransfer.files;
+                handleFiles(files);
+            });
+
+            document.getElementById('sort-selector').addEventListener('change', (event) => {
+                sortBars(event.target.value);
+                drawBars();
+            });
+
+            const fileSelector = document.getElementById('file-selector');
+            const fileButton = document.getElementById('file-selector-button');
+
+            fileButton.addEventListener('click', () => {
+                fileSelector.click();
+            });
+
+            fileSelector.addEventListener('change', (event) => {
+                const files = event.target.files;
+                handleFiles(files);
+            });
+
+            document.getElementById('save-button').addEventListener('click', () => {
+                saveCanvas('canvas', 'png');
+            });
+
+            const preview = document.getElementById('image-preview');
+            preview.addEventListener('click', () => {
+                preview.style.display = 'none';
+            });
+
+            canvas.mousePressed(handleBarClick);
+        }
+
+        function handleFiles(files) {
+            const countDiv = document.getElementById('image_count');
+            let newImagesCount = 0;
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    processFile(file);
+                    newImagesCount++;
+                }
+            }
+            if (newImagesCount > 0) {
+                countDiv.textContent = `# images: ${bars.length}`;
+                //countDiv.style.display = 'block';
             }
         }
-        document.getElementsByTagName('body')[0].style.backgroundColor = "#eee";
-        document.getElementsByTagName('body')[0].style.overflow = "hidden"; 
-        document.getElementById('image_container').appendChild(space);
-        document.getElementById('instructions').style.display = 'none';
-        document.getElementById('image_container').style.zIndex = 10000;
-        document.getElementById('image_count').innerHTML = 'You added ' + i + ' images. <button onclick="location.reload();">Restart</button>';
-    }
 
-    function getColor(imageSrc, callback) {
-        var image = document.createElement('img');
-        image.onload = function() {
-            var colorThief = new ColorThief();
-            var dominantColor = colorThief.getColor(image);
-            if (typeof callback === 'function') {
-                callback(dominantColor);
-            }
-        };
-        image.src = imageSrc;
-    }
+        function processFile(file) {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = () => {
+                const colorThief = new ColorThief();
+                const dominantColor = colorThief.getColor(img);
+                const [r, g, b] = dominantColor;
+                const colorHSB = rgbToHsb(r, g, b);
+                bars.push({
+                    color: dominantColor,
+                    h: colorHSB[0],
+                    s: colorHSB[1],
+                    b: colorHSB[2],
+                    img: img
+                });
+                drawBars();
 
-    function rgbToHsl(r, g, b) {
-        r /= 255, g /= 255, b /= 255;
-        var max = Math.max(r, g, b), min = Math.min(r, g, b);
-        var h, s, l = (max + min) / 2;
+                // Update counter after adding the image
+                const countDiv = document.getElementById('image_count');
+                countDiv.textContent = `# images: ${bars.length}`;
+                //countDiv.style.display = 'block';
 
-        if (max === min) {
-            h = s = 0;
-        } else {
-            var d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
-            }
-            h /= 6;
+                URL.revokeObjectURL(img.src);
+            };
         }
-        return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
-    }
 
-    function rgbToHex(r, g, b) {
-        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-    }
-</script>
 
+        function drawBars() {
+            background(240);
+            const barWidth = width / bars.length;
+            for (let i = 0; i < bars.length; i++) {
+                fill(bars[i].color[0], bars[i].color[1], bars[i].color[2]);
+                noStroke();
+                rect(i * barWidth, 0, barWidth, height);
+            }
+        }
+
+        function sortBars(criteria) {
+            if (criteria === 'hue') {
+                bars.sort((a, b) => a.h - b.h);
+            } else if (criteria === 'saturation') {
+                bars.sort((a, b) => a.s - b.s);
+            } else if (criteria === 'brightness') {
+                bars.sort((a, b) => a.b - b.b);
+            }
+        }
+
+        function handleBarClick() {
+            const barWidth = width / bars.length;
+            const clickedBarIndex = Math.floor(mouseX / barWidth);
+
+            if (clickedBarIndex >= 0 && clickedBarIndex < bars.length) {
+                const preview = document.getElementById('image-preview');
+                preview.src = bars[clickedBarIndex].img.src;
+                preview.style.display = 'block';
+            }
+        }
+
+        function rgbToHsb(red, green, blue) {
+            const max = Math.max(red, green, blue);
+            const min = Math.min(red, green, blue);
+            const delta = max - min;
+
+            let h = 0;
+            if (delta !== 0) {
+                if (max === red) {
+                    h = ((green - blue) / delta) % 6;
+                } else if (max === green) {
+                    h = (blue - red) / delta + 2;
+                } else {
+                    h = (red - green) / delta + 4;
+                }
+                h = (h * 60 + 360) % 360;
+            }
+
+            const s = max === 0 ? 0 : (delta / max) * 100;
+            const brightness = (max / 255) * 100;
+            return [h, s, brightness];
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth * 0.9, windowHeight * 0.6);
+            drawBars();
+        }
+    </script>
 </body>
 </html>
