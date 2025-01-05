@@ -1,268 +1,295 @@
 <!-- *************************
-    A mini tool to generate voronoi diagram from one or various image files. 
-    ereyes.github.io
-    Paris, 02.2024
+    Drag & Voronoi
+    A mini tool to draw a Voronoi diagram from image files. 
+    Number of cells is the number of images. 
+    Colors of cells are the most dominant of each image. 
+    The inner dot of point of cells is the second most dominant color.
+    ereyes.github.io, Paris
+    v01 - 02.2024
+    v02 - 01.2025
     License: Creative Commons CC BY-SA 4.0
     ************************* 
 -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drag and Voronoi</title>
-    <script src="https://d3js.org/d3.v5.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
-        * { box-sizing: border-box;}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drag & Voronoi</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+  integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+    rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://ereyes.github.io/drag_and_hue/style_and_hue.css">
+  <link rel="icon" href="https://ereyes.github.io/drag_and_hue/logo.png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.umd.js"></script>
+  <script src="https://d3js.org/d3-delaunay.v6.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
 
-        #welcome {
-            width:250px;
-            float:left;
-            margin-left: 20px;
-        }
-        #welcome p {
-            color:#888;
-        }
-        #drop-zone {
-            width: 270px;
-            height:250px;
-            border: 2px dashed #ccc;
-            margin-left: 50px;
-            margin-top: 30px;
-            text-align: left;
-            line-height: 30px;
-            padding:2em;
-            float: left;
-        }
-        #drop_zone {
-            width: 100%;
-            height: 200px;
-            border: 2px dashed #ccc;
-            border-radius: 5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        #file-input {
-            display: none;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #spinner {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 999;
-        }
-        svg {
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-    </style>
+    main {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #dropzone {
+      border: 2px dashed #999;
+      padding: 10px;
+      text-align: center;
+      background-color: #f9f9f9;
+      margin: 10px;
+      width:300px;
+      max-width: 800px;
+    }
+
+    #dropzone.hover {
+      background-color: #ddd;
+    }
+
+    .preview-container {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border: 3px solid #333;
+      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .preview-image {
+      max-width: 50vw;
+      max-height: 50vh;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .ui-bars {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .ui-bars button {
+      margin: 5px;
+    }
+
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 999;
+    }
+    #sketch-container {
+      margin-top: -300px;
+    }
+  </style>
 </head>
-<body>
-    <div id="instructions">
+<body class="lora-400">
 
-        <div id="welcome">
-            <h1>Drag & <span style="color: tomato;">Voronoi</span> </h1>
-            <p>A simple drag and drop tool to generate a Voronoi diagram from a series of image files.</p>
-            <p>Colors are the most representatives of each image, expressed in HSL color mode.</p>
-            <p>The position of shapes is random, no special order.</p>
-            <p><a href="https://ereyes.github.io/drag_and_hue/">Back to all Drag & Hue tools.</a></p>
-        </div>
-        <div id="drop-zone">
-            <span>Drag & Drop Images Here</span>
-            <input type="file" id="file-input" multiple>
-            <button id="select-files">Select Files</button>
-        </div>
+  <div class="content-wrapper">
+    <section id="instructions-section">
+      <h4>Drag & <span style="color: tomato;"> <strong>Voronoi</strong></span></h4>
+      <p>A simple tool to draw a Voronoi diagram from image files. </p>
+      <p>
+        <a href="https://ereyes.github.io/drag_and_hue/"><i class="fa-solid fa-chevron-left"></i> 
+            Back to <strong>Drag</strong> <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="d&h logo" width="30px"><strong>Hue</strong></a>
+    </p>
+    </section>
+    <section  style="margin-right: auto; margin-left: auto;">
+      <div id="dropzone">Drag & drop images here</div>
+    </section>
+  </div>
+
+
+  <main>    
+    
+    <div id="sketch-container"></div>
+
+    <!-- Controls below the canvas -->
+    <div id="controls" class="ui-bars">
+      <span id="image_count"># images: 0</span>
+      <input type="file" id="file-selector" multiple style="display: none;">
+      <button id="file-selector-button"><i class="fa-regular fa-folder-open"></i> add images</button>
+      <button id="save-button"><i class="fa-solid fa-download"></i> save canvas</button>
+      <button onclick="location.reload();"><i class="fa-solid fa-repeat"></i> restart</button>
     </div>
 
-    <div id="spinner">
-        <img src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/0.16.1/images/loader-large.gif" alt="Spinner">
+    <!-- Fullscreen preview -->
+    <div id="overlay"></div>
+    <div class="preview-container" id="image-preview-container">
+      <img id="image-preview" class="preview-image" src="" alt="Click to close">
     </div>
-    <script>
-        let pointsCount = 0;
-        let svg;
-        const spinner = document.getElementById('spinner');
+  </main>
+  <script>
+    let points = [];  // Voronoi seed points
+    let primaryColors = [];  // Most dominant colors of images (for cell background)
+    let secondaryColors = [];  // Second most dominant colors of images (for ellipses)
+    let images = [];  // Image URLs
+    let colorThief = new ColorThief();
+    let voronoi;
+    let imageCountElement;
 
-        // Function to handle file drop
-        function handleFileDrop(event) {
-            event.preventDefault();
-            const files = event.dataTransfer.files;
-            pointsCount = files.length;
-            showSpinner();
-            generateVoronoiDiagram(Array.from(files));
+    function setup() {
+      const canvas = createCanvas(windowWidth * 0.7, windowHeight * 0.6);  // 90% width, 70% height
+      canvas.parent("sketch-container");
+      setupDropZone();
+      setupControls();
+      canvas.mousePressed(onCanvasClick);
+      noLoop();  // Draw only when necessary
+    }
+
+    function draw() {
+      background(240);
+      if (points.length === 0) return;
+
+      const delaunay = d3.Delaunay.from(points);
+      voronoi = delaunay.voronoi([0, 0, width, height]);
+
+      for (let i = 0; i < points.length; i++) {
+        let cell = voronoi.cellPolygon(i);
+        if (cell) {
+          fill(primaryColors[i]);  // Fill cell with the dominant color
+          stroke(0);
+          beginShape();
+          for (let [x, y] of cell) {
+            vertex(x, y);
+          }
+          endShape(CLOSE);
         }
+        // Draw ellipse with the second most dominant color
+        fill(secondaryColors[i]);
+        noStroke();
+        ellipse(points[i][0], points[i][1], 5, 5);  // Ellipse size set to 5x5
+      }
+    }
 
-        // Function to handle file selection via button
-        function handleFileSelect(event) {
-            const files = event.target.files;
-            pointsCount = files.length;
-            showSpinner();
-            generateVoronoiDiagram(Array.from(files));
+    function windowResized() {
+      resizeCanvas(windowWidth * 0.7, windowHeight * 0.6);  // Resize canvas when window resizes
+      redraw();  // Redraw the Voronoi diagram after resizing
+    }
+
+    function setupDropZone() {
+      const dropzone = select("#dropzone");
+      dropzone.dragOver(() => dropzone.addClass("hover"));
+      dropzone.dragLeave(() => dropzone.removeClass("hover"));
+      dropzone.drop(handleFiles, () => dropzone.removeClass("hover"));
+    }
+
+    function setupControls() {
+      imageCountElement = select("#image_count");
+      const fileSelectorButton = select("#file-selector-button");
+      const fileSelector = select("#file-selector");
+      const saveButton = select("#save-button");
+
+      fileSelectorButton.mousePressed(() => fileSelector.elt.click());
+      fileSelector.changed(() => handleFileInput(fileSelector.elt.files));
+      saveButton.mousePressed(() => saveCanvas("voronoi-diagram", "png"));
+    }
+
+    function handleFileInput(files) {
+      for (let file of files) {
+        if (file.type.startsWith("image/")) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = createImg(e.target.result, "").hide();
+            img.elt.onload = () => {
+              const palette = colorThief.getPalette(img.elt, 5);  // Get dominant color palette
+              const primaryColor = palette[0];  // First dominant color
+              const secondaryColor = palette[1] || primaryColor;  // Second dominant color
+              points.push([random(width), random(height)]);
+              primaryColors.push(color(primaryColor[0], primaryColor[1], primaryColor[2]));
+              secondaryColors.push(color(secondaryColor[0], secondaryColor[1], secondaryColor[2]));
+              images.push(e.target.result);
+              updateImageCount();
+              redraw();
+            };
+          };
+          reader.readAsDataURL(file);
         }
+      }
+    }
 
-        // Function to show spinner
-        function showSpinner() {
-            spinner.style.display = 'block';
+    function handleFiles(file) {
+      const img = createImg(file.data, "").hide();
+      img.elt.onload = () => {
+        const palette = colorThief.getPalette(img.elt, 5);
+        const primaryColor = palette[0];
+        const secondaryColor = palette[1] || primaryColor;
+        points.push([random(width), random(height)]);
+        primaryColors.push(color(primaryColor[0], primaryColor[1], primaryColor[2]));
+        secondaryColors.push(color(secondaryColor[0], secondaryColor[1], secondaryColor[2]));
+        images.push(file.data);
+        updateImageCount();
+        redraw();
+      };
+    }
+
+    function updateImageCount() {
+      imageCountElement.html(`# images: ${points.length}`);
+    }
+
+    function onCanvasClick() {
+      const [mx, my] = [mouseX, mouseY];
+      for (let i = 0; i < points.length; i++) {
+        let cell = voronoi.cellPolygon(i);
+        if (cell && pointInPolygon([mx, my], cell)) {
+          showImagePreview(images[i]);
+          return;
         }
+      }
+    }
 
-        // Function to hide spinner
-        function hideSpinner() {
-            spinner.style.display = 'none';
-        }
+    function showImagePreview(imageSrc) {
+      const overlay = select("#overlay");
+      const previewContainer = select("#image-preview-container");
+      const previewImage = select("#image-preview");
 
-        // Function to generate Voronoi diagram
-        function generateVoronoiDiagram(files) {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
+      overlay.style("display", "block");
+      previewContainer.style("display", "block");
+      previewImage.attribute("src", imageSrc);
 
-            const promises = [];
-            files.forEach(file => {
-                promises.push(new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const img = new Image();
-                        img.onload = function() {
-                            const canvas = document.createElement('canvas');
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0);
-                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                            const color = getDominantColor(imageData);
-                            resolve(color);
-                        };
-                        img.src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }));
-            });
+      previewImage.mousePressed(closePreview);
+      overlay.mousePressed(closePreview);
+    }
 
-            Promise.all(promises).then(colors => {
-                // Sort colors
-                colors.sort((a, b) => a.localeCompare(b));
+    function closePreview() {
+      select("#overlay").style("display", "none");
+      select("#image-preview-container").style("display", "none");
+    }
 
-                const points = d3.range(pointsCount).map(() => [Math.random() * width, Math.random() * height]);
-
-                const voronoi = d3.voronoi()
-                    .extent([[0, 0], [width, height]]);
-
-                const diagram = voronoi(points);
-
-                if (!svg) {
-                    svg = d3.select("body").append("svg")
-                        .attr("width", width)
-                        .attr("height", height);
-                } else {
-                    svg.selectAll("*").remove(); // Clear existing content
-                }
-
-                svg.selectAll("path")
-                    .data(diagram.polygons())
-                    .enter().append("path")
-                    .attr("fill", (d, i) => colors[i])
-                    .attr("stroke", "black")
-                    .attr("d", d => d ? "M" + d.join("L") + "Z" : null);
-
-                svg.selectAll("circle")
-                    .data(points)
-                    .enter().append("circle")
-                    .attr("r", 2)
-                    .attr("cx", d => d[0])
-                    .attr("cy", d => d[1])
-                    .attr("fill", "black");
-
-                hideSpinner();
-            });
-        }
-
-        // Function to get dominant color from image data
-        function getDominantColor(imageData) {
-            const colorCount = {};
-            const data = imageData.data;
-
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                const hsl = rgbToHsl(r, g, b);
-                const key = hsl.join(",");
-                colorCount[key] = colorCount[key] ? colorCount[key] + 1 : 1;
-            }
-
-            let dominantColor = null;
-            let maxCount = -1;
-
-            for (const key in colorCount) {
-                if (colorCount.hasOwnProperty(key) && colorCount[key] > maxCount) {
-                    dominantColor = key.split(",").map(Number);
-                    maxCount = colorCount[key];
-                }
-            }
-
-            return `hsl(${dominantColor[0]}, ${dominantColor[1]}%, ${dominantColor[2]}%)`;
-        }
-
-        // Function to convert RGB to HSL
-        function rgbToHsl(r, g, b) {
-            r /= 255, g /= 255, b /= 255;
-            const max = Math.max(r, g, b), min = Math.min(r, g, b);
-            let h, s, l = (max + min) / 2;
-
-            if (max === min) {
-                h = s = 0; // achromatic
-            } else {
-                const d = max - min;
-                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-                switch (max) {
-                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                    case g: h = (b - r) / d + 2; break;
-                    case b: h = (r - g) / d + 4; break;
-                }
-                h /= 6;
-            }
-
-            return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
-        }
-
-        // Event listeners for file drop and file select button
-        const dropZone = document.getElementById('drop-zone');
-        dropZone.addEventListener('dragover', event => {
-            event.preventDefault();
-            dropZone.classList.add('highlight');
-        });
-        dropZone.addEventListener('dragleave', event => {
-            event.preventDefault();
-            dropZone.classList.remove('highlight');
-        });
-        dropZone.addEventListener('drop', handleFileDrop);
-
-        const fileInput = document.getElementById('file-input');
-        fileInput.addEventListener('change', handleFileSelect);
-
-        const selectFilesButton = document.getElementById('select-files');
-        selectFilesButton.addEventListener('click', () => {
-            fileInput.click();
-        });
-    </script>
+    function pointInPolygon(point, vs) {
+      let x = point[0], y = point[1];
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        let xi = vs[i][0], yi = vs[i][1];
+        let xj = vs[j][0], yj = vs[j][1];
+        let intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+  </script>
 </body>
 </html>
+
