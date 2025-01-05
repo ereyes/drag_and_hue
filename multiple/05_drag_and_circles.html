@@ -1,7 +1,9 @@
 <!-- *************************
-    A mini tool to generate colored circles from various image files. 
-    ereyes.github.io
-    Paris, 02.2024
+    Drag & Circles
+    A mini tool to draw color circles from various image files. 
+    ereyes.github.io, Paris
+    v01 - 02.2024
+    v02 - 01.2025
     License: Creative Commons CC BY-SA 4.0
     ************************* 
 -->
@@ -10,191 +12,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drag and Circles</title>
+    <title>Drag & Circles</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://ereyes.github.io/drag_and_hue/style_and_hue.css">
+    <link rel="icon" href="https://ereyes.github.io/drag_and_hue/logo.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.umd.js"></script>
     <style>
-        * { box-sizing: border-box;}
-        #welcome {
-            width:250px;
-            float:left;
-            margin-left: 20px;
+        body {
+            margin: 0;
+            overflow: hidden;
         }
-        #welcome p {
-            color:#888;
+        #instructions {
+            text-align: center;
         }
-        #drop-zone {
-            width: 270px;
-            height:250px;
+        #dropZone {
+            width: 300px;
+            height: 70px;
             border: 2px dashed #ccc;
-            margin-left: 50px;
-            margin-top: 30px;
-            text-align: left;
-            line-height: 30px;
-            padding:2em;
-            float: left;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.2rem;
+            color: #aaa;
+            background-color: rgba(255, 255, 255, 0.8);
+            pointer-events: auto;
+            z-index: 10;
         }
-        #drop-zone.dragover {
-            border-color: #333;
-            color: #333;
+        #canvas-container {
+            width: 65vw;
+            height: 45vh;
+            margin-right: auto;
+            margin-left:auto;
+            margin-top:-2%;
+            position: relative;
         }
-        #file-input {
-            display: none;
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border: 1px solid gray;
         }
-        .color-circle {
+        #controls {
             position: absolute;
-            border-radius: 50%;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
-        .preview {
-            position: absolute;
+        button {
+
+        }
+
+        #imagePreview {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 50%;
+            max-height: 50%;
             display: none;
-            max-width: 200px;
-            max-height: 200px;
-            border: 1px solid #ccc;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border: 5px solid rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 800px) {
+            .ui-bars {
+                font-size: 70%;
+                text-align: center;
+                line-height:1.2em;
+
+            }
         }
     </style>
 </head>
-<body>
-<div id="instructions">
-    <div id="welcome">
-        <h1>Drag & <span style="color: tomato;">Circles</span> </h1>
-        <p>A simple drag and drop tool to generate colored circles from a series of image files.</p>
-        <p>Color mode is RGB. The inner circle represents the dominant color.</p>
-        <p>The color of the border represents the secondary color.</p>
-        <p>Mouse over a circle to see preview of the picture.</p>
-        <p><a href="https://ereyes.github.io/drag_and_hue/">Back to all Drag & Hue tools.</a></p>
+<body class="lora-400">
+    <div class="content-wrapper">
+        <section id="instructions-section">
+            <div id="welcome">
+                <h4>Drag & <span style="color: tomato;"> <strong>Circles</strong></span> </h4>
+                <p>A simple drag-and-drop tool to create circles of colors from one or various image files.</p>
+                <p>Circles are filled with the most dominant color, and their strokes are set to the second most representative color.</p>
+                <p>
+                    <a href="https://ereyes.github.io/drag_and_hue/"><i class="fa-solid fa-chevron-left"></i> 
+                        Back to <strong>Drag</strong> <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="d&h logo" width="30px"><strong>Hue</strong></a>
+                </p>    
+            </div>
+        </section>
+        <section style="margin-right: auto; margin-left: auto;">
+            <div id="dropZone">Drag & drop images here</div>
+        </section>
     </div>
-    <div id="drop-zone">Drag & Drop images here or <button onclick="document.getElementById('file-input').click()">Select Files</button></div>
-</div>
 
-<input type="file" id="file-input" multiple accept="image/*">
-<div id="color-circles"></div>
-<img id="preview" class="preview" alt="Image Preview">
+    <div id="canvas-container"></div>
+    <img id="imagePreview" />
 
-<!-- Include Color Thief library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
+    <div id="controls" class="ui-bars">
+        <span id="image_count"># images: 0</span>
+        <input type="file" id="file-selector" multiple style="display: none;">
+        <button id="file-selector-button"><i class="fa-regular fa-folder-open"></i> add images</button>        
+        <button id="save-button"><i class="fa-solid fa-download"></i> save canvas</button>
+        <button onclick="location.reload();"><i class="fa-solid fa-repeat"></i> restart</button>
+    </div>
 
-<script>
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const colorCirclesContainer = document.getElementById('color-circles');
-    const preview = document.getElementById('preview');
-    const colorThief = new ColorThief();
-    const circles = [];
+    <script>
+        let images = [];
+        let imagePreviewElement = document.getElementById('imagePreview');
+        let imageCountElement = document.getElementById('image_count');
+        let dropZone = document.getElementById('dropZone');
+        let fileSelector = document.getElementById('file-selector');
+        let fileSelectorButton = document.getElementById('file-selector-button');
 
-    const getDominancePercentage = (img, color) => {
+        // File input click event
+        fileSelectorButton.addEventListener('click', () => {
+            fileSelector.click();
+        });
 
-        document.getElementsByTagName('body')[0].style.backgroundColor = "#eee";
-        document.getElementById('instructions').style.display = "none";
+        // Handle files from input
+        fileSelector.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
 
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        context.drawImage(img, 0, 0, img.width, img.height);
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#007bff';
+        });
 
-        const imageData = context.getImageData(0, 0, img.width, img.height);
-        const data = imageData.data;
-        let matchCount = 0;
-        
-        for (let i = 0; i < data.length; i += 4) {
-            if (
-                data[i] === color[0] &&
-                data[i + 1] === color[1] &&
-                data[i + 2] === color[2]
-            ) {
-                matchCount++;
-            }
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = '#ccc';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#ccc';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function setup() {
+            let canvasElement = createCanvas(windowWidth * 0.65, windowHeight * 0.45);
+            canvasElement.parent('canvas-container');
+            canvasElement.mousePressed(handleCircleClick);
+            noLoop();
         }
 
-        return (matchCount / (data.length / 4)) * 100;
-    };
+        function draw() {
+            background(240);
+            let totalFiles = images.length;
+            imageCountElement.textContent = `# images: ${totalFiles}`;
 
-    const doesOverlap = (circle, x, y, diameter) => {
-        for (let existingCircle of circles) {
-            const distance = Math.sqrt(
-                Math.pow(existingCircle.x - x, 2) + Math.pow(existingCircle.y - y, 2)
-            );
-            if (distance < (existingCircle.diameter / 2) + (diameter / 2)) {
-                return true;
-            }
+            //let baseSize = Math.max(15, 200 / totalFiles);
+
+            const baseSize = Math.min(40, 200 / Math.sqrt(images.length)); // Decrease size with more images
+
+            images.forEach((imgData) => {
+                let [r1, g1, b1] = imgData.colors[0];
+                let [r2, g2, b2] = imgData.colors[1];
+
+                let circleSize = baseSize;
+                let strokeWeightValue = Math.max(2, baseSize / 5);
+
+                fill(r1, g1, b1);
+                stroke(r2, g2, b2);
+                strokeWeight(strokeWeightValue);
+
+                if (!imgData.x || !imgData.y) {
+                    let newPos = getNonOverlappingPosition(circleSize);
+                    imgData.x = newPos.x;
+                    imgData.y = newPos.y;
+                }
+
+                circle(imgData.x, imgData.y, circleSize);
+                imgData.size = circleSize;
+            });
         }
-        return false;
-    };
 
-    const handleFiles = (files) => {
-        Array.from(files).forEach(file => {
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = () => {
-                        const dominantColors = colorThief.getPalette(img, 2);
-                        const mostDominantColor = dominantColors[0];
-                        const secondDominantColor = dominantColors[1];
+        function handleCircleClick() {
+            let mouseXPos = mouseX;
+            let mouseYPos = mouseY;
 
-                        const dominancePercentage1 = getDominancePercentage(img, mostDominantColor);
-                        const dominancePercentage2 = getDominancePercentage(img, secondDominantColor);
-                        const diameter = Math.max(50, Math.min(100, dominancePercentage1 * 1000)); // Adjusting the diameter based on dominance percentage of the most dominant color
-                        const borderWidth = Math.max(10, Math.min(20, dominancePercentage2 * 500)); // Adjusting the border width based on dominance percentage of the second dominant color
+            for (let imgData of images) {
+                let distance = dist(mouseXPos, mouseYPos, imgData.x, imgData.y);
+                if (distance < imgData.size / 2) {
+                    imagePreviewElement.src = imgData.imageElement.src;
+                    imagePreviewElement.style.display = 'block';
 
-                        let x, y;
-                        do {
-                            x = Math.random() * (window.innerWidth - diameter);
-                            y = Math.random() * (window.innerHeight - diameter);
-                        } while (doesOverlap({x, y, diameter}, x, y, diameter));
-
-                        const circle = document.createElement('div');
-                        circle.className = 'color-circle';
-                        circle.style.backgroundColor = `rgb(${mostDominantColor[0]}, ${mostDominantColor[1]}, ${mostDominantColor[2]})`;
-                        circle.style.border = `${borderWidth}px solid rgb(${secondDominantColor[0]}, ${secondDominantColor[1]}, ${secondDominantColor[2]})`;
-                        circle.style.width = `${diameter}px`;
-                        circle.style.height = `${diameter}px`;
-                        circle.style.top = `${y}px`;
-                        circle.style.left = `${x}px`;
-
-                        circles.push({x, y, diameter});
-
-                        circle.addEventListener('mouseover', () => {
-                            preview.src = img.src;
-                            preview.style.display = 'block';
-                            preview.style.top = `${circle.offsetTop + diameter / 2}px`;
-                            preview.style.left = `${circle.offsetLeft + diameter / 2}px`;
-                        });
-
-                        circle.addEventListener('mouseout', () => {
-                            preview.style.display = 'none';
-                        });
-
-                        colorCirclesContainer.appendChild(circle);
+                    imagePreviewElement.onclick = () => {
+                        imagePreviewElement.style.display = 'none';
                     };
+                    break;
+                }
+            }
+        }
+
+        function handleFiles(files) {
+            for (let i = 0; i < files.length; i++) {
+                let file = files[i];
+                let reader = new FileReader();
+                reader.onload = (event) => {
+                    handleFile({ type: 'image', data: event.target.result });
                 };
                 reader.readAsDataURL(file);
-            } else {
-                alert('Please drop an image file.');
             }
+        }
+
+        function handleFile(file) {
+            if (file.type === 'image') {
+                let imgElement = new Image();
+                imgElement.src = file.data;
+                imgElement.onload = () => {
+                    let colorThief = new ColorThief();
+                    let dominantColors = colorThief.getPalette(imgElement, 2);
+
+                    images.push({
+                        colors: dominantColors,
+                        imageElement: imgElement,
+                        x: null,
+                        y: null,
+                        size: 0
+                    });
+
+                    redraw();
+                };
+            }
+        }
+
+        function getNonOverlappingPosition(size) {
+            let maxAttempts = 100;
+            for (let i = 0; i < maxAttempts; i++) {
+                let x = random(size / 2, width - size / 2);
+                let y = random(size / 2, height - size / 2);
+
+                let overlapping = images.some(imgData => {
+                    let d = dist(x, y, imgData.x || 0, imgData.y || 0);
+                    let otherSize = imgData.size || 50;
+                    return d < (size / 2 + otherSize / 2);
+                });
+
+                if (!overlapping) {
+                    return { x, y };
+                }
+            }
+            return { x: random(width), y: random(height) };
+        }
+
+        document.getElementById('save-button').addEventListener('click', () => {
+            saveCanvas('canvas_image', 'png');
         });
-    };
 
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files);
-    });
-
-    fileInput.addEventListener('change', () => {
-        handleFiles(fileInput.files);
-    });
-</script>
-
+        function windowResized() {
+            resizeCanvas(windowWidth * 0.65, windowHeight * 0.45);
+            redraw();
+        }
+    </script>
 </body>
 </html>
