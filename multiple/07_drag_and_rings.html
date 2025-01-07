@@ -1,0 +1,328 @@
+<!-- *************************
+    A mini tool to generate rings of colors from one or various image files. 
+    ereyes.github.io
+    Paris, 01.2025
+    License: Creative Commons CC BY-SA 4.0
+    ************************* 
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag & Rings</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://ereyes.github.io/drag_and_hue/style_and_hue.css">
+    <link rel="icon" href="https://ereyes.github.io/drag_and_hue/logo.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        #drop-zone {
+            border: 2px dashed #aaa;
+            width: 80%;
+            max-width: 500px;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            background-color: #f0f0f0;
+            margin: 10px auto;
+        }
+
+        #controls {
+            text-align: center;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid gray;
+        }
+
+        button, select {
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover, select:hover {
+
+        }
+
+        select {
+            background-color: #007bff;
+            color: white;
+        }
+
+        #image_count {
+            display: inline-block;
+            margin-right: 15px;
+        }
+
+        .image-preview {
+            position: absolute;
+            max-width: 200px;
+            max-height: 200px;
+            border: 2px solid #007bff;
+            background-color: white;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="lora-400">
+
+    <div id="container">
+        <h4>Drag & <span style="color: tomato;"> <strong>Rings</strong></span></h4>
+        <p>A simple tool to draw rings of colors from image files. </p>
+        <p>
+          <a href="https://ereyes.github.io/drag_and_hue/"><i class="fa-solid fa-chevron-left"></i> 
+              Back to <strong>Drag</strong> <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="d&h logo" width="30px"><strong>Hue</strong></a>
+        </p>  
+
+        <div id="drop-zone">Drop Images Here</div>    
+
+        <!-- Canvas Container -->
+        <div id="canvas-container"></div>
+
+        <!-- Controls -->
+        <div id="controls" class="ui-bars">
+            <span id="image_count"># images: 0</span>
+            <input type="file" id="file-selector" multiple style="display: none;">
+            <button id="file-selector-button"><i class="fa-regular fa-folder-open"></i> add images</button>
+            <select id="sort-selector">
+                <option value="none">No Sorting</option>
+                <option value="hue">Sort by Hue</option>
+                <option value="saturation">Sort by Saturation</option>
+                <option value="brightness">Sort by Brightness</option>
+            </select>
+            <button id="save-button"><i class="fa-solid fa-download"></i> save canvas</button>
+            <button onclick="location.reload();"><i class="fa-solid fa-repeat"></i> restart</button>
+        </div>
+    </div>
+
+    <!-- FontAwesome Icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+
+    <!-- JavaScript Logic -->
+    <script>
+        let dominantColors = [];
+        let images = [];
+        let originalColors = [];
+        let originalImages = [];
+        let rings = [];  // Store ring positions and radii
+        let currentPreviewId = null;  // Track the currently displayed preview
+        let canvas;
+        let colorThief = new ColorThief();  // Initialize Color Thief instance
+
+        function setup() {
+            canvas = createCanvas(windowWidth * 0.7, windowHeight * 0.6);
+            canvas.parent('canvas-container');  // Attach the canvas to the div
+            noLoop();  // Draw once until images are dropped
+        }
+
+        function draw() {
+            background(255);
+            let centerX = width / 2;
+            let centerY = height / 2;
+            let maxRadius = min(width, height) / 2;
+            rings = [];  // Reset rings
+
+            if (dominantColors.length === 0) return;
+
+            // Dynamically calculate the ring width to fit all rings in the canvas
+            let ringWidth = maxRadius / dominantColors.length;
+
+            // Draw one ring per dominant color (one per image)
+            for (let i = 0; i < dominantColors.length; i++) {
+                let radius = ringWidth * (i + 1);
+                let color = dominantColors[i];
+                stroke(color[0], color[1], color[2]);  // Apply dominant color as stroke
+                noFill();
+                strokeWeight(ringWidth);  // Use dynamic ring width
+                ellipse(centerX, centerY, 2 * radius, 2 * radius);
+
+                // Store ring details
+                rings.push({
+                    x: centerX,
+                    y: centerY,
+                    innerRadius: ringWidth * i,
+                    outerRadius: radius,
+                    img: images[i],
+                    color: color
+                });
+            }
+        }
+
+        function mousePressed() {
+            let clickedRing = null;
+
+            for (let i = 0; i < rings.length; i++) {
+                let ring = rings[i];
+                let d = dist(mouseX, mouseY, ring.x, ring.y);
+
+                if (d > ring.innerRadius && d < ring.outerRadius) {
+                    clickedRing = i;
+                }
+            }
+
+            // Close any existing preview
+            if (currentPreviewId !== null) {
+                let existingPreview = document.getElementById(`preview-${currentPreviewId}`);
+                if (existingPreview) existingPreview.remove();
+                currentPreviewId = null;
+            }
+
+            if (clickedRing !== null && clickedRing !== currentPreviewId) {
+                let ring = rings[clickedRing];
+                let preview = document.createElement('img');
+                preview.src = ring.img.src;
+                preview.className = 'image-preview';
+                preview.style.left = `${mouseX}px`;
+                preview.style.top = `${mouseY}px`;
+                preview.id = `preview-${clickedRing}`;
+                document.body.appendChild(preview);
+                currentPreviewId = clickedRing;
+            }
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth * 0.7, windowHeight * 0.6);
+            redraw();  // Redraw rings after resizing
+        }
+
+        // Handle image drops
+        let dropZone = document.getElementById('drop-zone');
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.backgroundColor = '#d0e7ff';
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.backgroundColor = '#f0f0f0';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.backgroundColor = '#f0f0f0';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(files) {
+            for (let file of files) {
+                if (file.type.startsWith('image')) {
+                    let img = createImg(URL.createObjectURL(file), '').hide();
+                    img.elt.onload = function () {
+                        let color = colorThief.getColor(img.elt);
+                        dominantColors.push(color);
+                        originalColors.push([...color]);  // Save the original color order
+                        images.push(img.elt);
+                        originalImages.push(img.elt);  // Save the original image order
+                        updateImageCount();
+                        redraw();  // Redraw the canvas to update rings
+                    };
+                }
+            }
+        }
+
+        window.onload = function () {
+            document.getElementById('file-selector-button').addEventListener('click', () => {
+                document.getElementById('file-selector').click();
+            });
+            document.getElementById('file-selector').addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+
+            document.getElementById('save-button').addEventListener('click', () => {
+                saveCanvas('colorful_rings', 'png');
+            });
+
+            document.getElementById('sort-selector').addEventListener('change', (e) => {
+                sortRings(e.target.value);
+                redraw();
+            });
+        };
+
+        function updateImageCount() {
+            document.getElementById('image_count').textContent = `# images: ${dominantColors.length}`;
+        }
+
+        function sortRings(criterion) {
+            if (criterion === 'none') {
+                // Restore original order
+                dominantColors = [...originalColors];
+                images = [...originalImages];
+                return;
+            }
+
+            let sortedData = dominantColors.map((color, index) => ({
+                color,
+                image: images[index],
+                hsb: getHSB(color[0], color[1], color[2])
+            }));
+
+            console.log(`Before sorting by ${criterion}:`, sortedData.map(d => d.hsb));
+
+            sortedData.sort((a, b) => {
+                switch (criterion) {
+                    case 'hue':
+                        // Normalize hue values relative to red (0°)
+                        return normalizeHue(a.hsb[0]) - normalizeHue(b.hsb[0]);
+                    case 'saturation':
+                        return a.hsb[1] - b.hsb[1];
+                    case 'brightness':
+                        return a.hsb[2] - b.hsb[2];
+                    default:
+                        return 0;
+                }
+            });
+
+            console.log(`After sorting by ${criterion}:`, sortedData.map(d => d.hsb));
+
+            dominantColors = sortedData.map(item => item.color);
+            images = sortedData.map(item => item.image);
+            redraw();  // Ensure canvas is updated
+        }
+
+        function getHSB(r, g, b) {
+            let col = color(r, g, b);  // Convert to p5.js color
+            return [hue(col), saturation(col), brightness(col)];
+        }
+
+        function normalizeHue(hue) {
+            // Shift hue values so that red (0° or 360°) is centered
+            return (hue + 360) % 360;
+        }
+
+
+
+
+        function wrapHue(hue) {
+            return (hue + 360) % 360;
+        }
+    </script>
+</body>
+</html>
