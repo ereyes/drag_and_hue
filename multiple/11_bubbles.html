@@ -1,0 +1,326 @@
+<!-- *************************
+    A mini tool to generate a bubble chart of colors from one or various image files.
+    Dots resize as you add more files.
+    Click on bubbles to see a preview of the image.
+    ereyes.github.io
+    Paris, 01.2025
+    License: Creative Commons CC BY-SA 4.0
+    ************************* 
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drag & Bubbles</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+  integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+      rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://ereyes.github.io/drag_and_hue/style_and_hue.css">
+  <link rel="icon" href="https://ereyes.github.io/drag_and_hue/logo.png">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.umd.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    #dropzone {
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 600px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: #777;
+      font-size: 18px;
+    }
+    #dropzone.dragover {
+      border-color: #457b9d;
+      background-color: #f1faee;
+      color: #333;
+    }
+    svg {
+      width: 90%;
+      height: auto;
+      max-width: 800px;
+      aspect-ratio: 4 / 3;
+      display: block;
+      border: 1px solid gray;
+      background-color:rgb(240,240,240);
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal img {
+      max-width: 50%;
+      max-height: 50%;
+      border: 2px solid white;
+      border-radius: 10px;
+    }
+    #controls {
+      text-align: center;
+      margin-top: 10px;
+      margin-bottom:100px;
+    }
+    #controls button {
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="lora-400">
+  <h1>Drag & <span style="color: tomato;">Bubbles</span> </h1>
+  <p>A simple drag and drop tool to generate a bubble chart of colors from image files.</p>
+  <p>
+      <a href="https://ereyes.github.io/drag_and_hue/"><i class="fa-solid fa-chevron-left"></i> 
+          Back to <strong>Drag</strong> <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="d&h logo" width="30px"><strong>Hue</strong></a>
+  </p>
+
+  <div id="dropzone">Drop images here</div>
+  <svg id="canvas"></svg>
+  <div id="controls" class="ui-bars">
+    <span id="image_count"># images: 0</span>
+    <input type="file" id="file-selector" accept="image/*" multiple style="display: none;">
+    <button id="file-selector-button"><i class="fa-regular fa-folder-open"></i> add images</button>
+    <button id="save-button" style="margin-left:2em;"><i class="fa-solid fa-download"></i> save canvas</button>
+    <button onclick="location.reload();" style="margin-right: 2em;"><i class="fa-solid fa-repeat"></i> restart</button>
+  </div>
+  <div class="modal" id="imageModal">
+    <img id="modalImage" src="" alt="Preview">
+  </div>
+  <script>
+let width = document.getElementById('canvas').clientWidth;
+let height = width * 0.75; // Maintain 4:3 aspect ratio
+const margin = 50; // Inner margin for bubble placement
+
+const svg = d3.select("#canvas")
+  .attr("width", width)
+  .attr("height", height);
+
+const colorThief = new ColorThief();
+const images = [];
+const colors = [];
+
+const dropzone = document.getElementById("dropzone");
+const modal = document.getElementById("imageModal");
+const modalImage = document.getElementById("modalImage");
+const imageCountSpan = document.getElementById("image_count");
+const fileSelectorButton = document.getElementById("file-selector-button");
+const fileSelectorInput = document.getElementById("file-selector");
+
+fileSelectorButton.addEventListener("click", () => {
+  fileSelectorInput.click();
+});
+
+fileSelectorInput.addEventListener("change", (event) => {
+  handleFiles(event.target.files);
+});
+
+dropzone.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  dropzone.classList.add("dragover");
+});
+
+dropzone.addEventListener("dragleave", () => {
+  dropzone.classList.remove("dragover");
+});
+
+dropzone.addEventListener("drop", (event) => {
+  event.preventDefault();
+  dropzone.classList.remove("dragover");
+  handleFiles(event.dataTransfer.files);
+});
+
+window.addEventListener('resize', () => {
+  width = document.getElementById('canvas').clientWidth;
+  height = width * 0.75;
+
+  svg.attr("width", width).attr("height", height);
+
+  simulation
+    .force("x", d3.forceX(d => clusterX(d.hsl)).strength(0.7))
+    .force("y", d3.forceY(d => clusterY(d.hsl)).strength(0.7))
+    .alpha(1)
+    .restart();
+});
+
+
+function handleFiles(files) {
+  Array.from(files).forEach((file) => {
+    if (file.type.startsWith("image/")) {
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.src = e.target.result;
+        img.onload = () => {
+          extractColor(img, file);
+        };
+      };
+
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+function extractColor(img, file) {
+  const rgb = colorThief.getColor(img);
+  const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+
+  images.push({ img, hsl, file });
+  colors.push({ hsl, color: `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`, src: img.src });
+
+  imageCountSpan.textContent = `# images: ${images.length}`;
+  updateBubbles();
+}
+
+const simulation = d3.forceSimulation()
+  .force("x", d3.forceX(d => clusterX(d.hsl)).strength(0.7)) // Horizontal pull
+  .force("y", d3.forceY(d => clusterY(d.hsl)).strength(0.7)) // Vertical pull
+  .force("collide", d3.forceCollide(d => d.radius + 2).strength(1)) // Avoid overlap
+  .on("end", () => {
+    simulation.stop(); // Stop after stabilization
+  });
+
+function updateBubbles() {
+  const radius = Math.max(5, 30 - colors.length * 0.3); // Dynamically scale radius
+
+  colors.forEach(d => {
+    d.radius = radius;
+    if (d.x === undefined || d.y === undefined) {
+      d.x = width / 2; // Start from center
+      d.y = height / 2;
+    }
+  });
+
+  const bubbles = svg.selectAll("circle")
+    .data(colors, d => d.color);
+
+  const drag = d3.drag()
+    .on("start", (event, d) => {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    })
+    .on("drag", (event, d) => {
+      d.fx = event.x;
+      d.fy = event.y;
+    })
+    .on("end", (event, d) => {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    });
+
+  bubbles.enter()
+    .append("circle")
+    .attr("r", radius)
+    .attr("fill", d => d.color)
+    .attr("stroke", "#000")
+    .attr("stroke-width", 0.5)
+    .on("click", (event, d) => {
+      showModal(d.src);
+    })
+    .call(drag)
+    .merge(bubbles);
+
+  bubbles.exit().remove();
+
+  simulation.nodes(colors).on("tick", () => {
+    svg.selectAll("circle")
+      .attr("cx", d => Math.max(margin, Math.min(width - margin, d.x)))
+      .attr("cy", d => Math.max(margin, Math.min(height - margin, d.y)));
+  });
+
+  simulation.alpha(1).restart();
+}
+
+document.getElementById("save-button").addEventListener("click", () => {
+  const svgElement = document.getElementById("canvas");
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svgElement);
+  const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "bubbles_chart.svg";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function showModal(src) {
+  modalImage.src = src;
+  modal.style.display = "flex";
+}
+
+modal.addEventListener("click", () => {
+  modal.style.display = "none";
+});
+
+function rgbToHsl(r, g, b) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+
+  if (max === min) {
+    h = s = 0; // achromatic
+  } else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  return [h, s, l];
+}
+
+function clusterX(hsl) {
+  return hsl[0] * (width - 2 * margin) + margin; // Spread across full width
+}
+
+function clusterY(hsl) {
+  return hsl[2] * (height - 2 * margin) + margin; // Spread across full height
+}
+
+
+  </script>
+</body>
+</html>
