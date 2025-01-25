@@ -52,7 +52,7 @@ body {
 }
 
 button {
-    background: linear-gradient(to left, #eee, #fff);
+    background: linear-gradient(to top, #eee, #fff);
     border: 1px solid gray;
     border-radius: 5px;
     cursor: pointer;
