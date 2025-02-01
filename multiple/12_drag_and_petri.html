@@ -1,295 +1,314 @@
-<!-- *************************
-    A mini tool to generate a Petri dish of colors from one or various image files. 
-    Choose between colors and images.
-    Choose the parameter to distribute from the center to the edge of the circumference.
-    ereyes.github.io
-    Paris, 01.2025
-    License: Creative Commons CC BY-SA 4.0
-    ************************* 
--->
-
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drag & Petri</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drag & Petri</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
-        rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://ereyes.github.io/drag_and_hue/style_and_hue.css">
-    <link rel="icon" href="https://ereyes.github.io/drag_and_hue/logo.png">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.umd.js"></script>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            margin: 0;
-            height: 100vh;
-            overflow: hidden;
-        }
-        #drop-zone {
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 2px dashed #888;
-            border-radius: 5px;
-            color: #666;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            width: 90%;
-            max-width: 600px;
-            box-sizing: border-box;
-        }
-        #controls {
-            margin-bottom: 20px;
-            text-align: center;
-            font-family: Arial, sans-serif;
-            color: #666;
-            width: 90%;
-            max-width: 900px;
-            box-sizing: border-box;
-        }
-        #controls label {
-            cursor: pointer;
-        }
-        #controls input {
-            display: none;
-        }
-        canvas {
-            display: block;
-            max-width: 90%;
-            max-height: 90%;
-            box-sizing: border-box;
-            border: solid gray 1px;
-        }
-        #preview {
-            visibility: hidden;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            z-index: 1000;
-        }
-        #preview img {
-            max-width: 80%;
-            max-height: 80%;
-        }
-        #preview-close {
-            margin-top: 10px;
-            padding: 5px 10px;
-            background: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #preview-close:hover {
-            background: #ddd;
-        }
-    </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+    rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://ereyes.github.io/drag_and_hue/style_and_hue.css">
+  <link rel="icon" href="https://ereyes.github.io/drag_and_hue/logo.png">
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.umd.js"></script>
+  
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #drop-zone {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 2px dashed #888;
+      border-radius: 5px;
+      color: #666;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      width: 90%;
+      max-width: 600px;
+      box-sizing: border-box;
+    }
+    #controls {
+      margin-bottom: 20px;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      color: #666;
+      width: 90%;
+      max-width: 900px;
+      box-sizing: border-box;
+    }
+    #controls label {
+      cursor: pointer;
+    }
+    #controls input {
+      display: none;
+    }
+    canvas {
+      display: block;
+      max-width: 90%;
+      max-height: 90%;
+      box-sizing: border-box;
+      border: solid gray 1px;
+    }
+    #preview {
+      visibility: hidden;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      z-index: 1000;
+    }
+    #preview img {
+      max-width: 80%;
+      max-height: 80%;
+    }
+    #preview-close {
+      margin-top: 10px;
+      padding: 5px 10px;
+      background: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #preview-close:hover {
+      background: #ddd;
+    }
+  </style>
 </head>
 <body class="lora-400">
 
+  <div class="content-wrapper">
+    <section id="instructions-section">
+      <div id="welcome">
+        <h4>Drag & <span style="color: tomato;"><strong>Petri</strong></span></h4>
+        <p>A mini tool to generate a Petri dish of colors from one or various image files.</p>
+        <p>
+          <a href="https://ereyes.github.io/drag_and_hue/"><i class="fa-solid fa-chevron-left"></i>
+            Back to <strong>Drag</strong> <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="d&h logo" width="30px"><strong>Hue</strong></a>
+        </p>
+      </div>
+    </section>
+    <section>
+      <div id="drop-zone" ondragover="event.preventDefault()" ondrop="handleDropZone(event)">Drop image files here</div>
+    </section>
+  </div>
 
-    <div class="content-wrapper">
-        <section id="instructions-section">
-            <div id="welcome">
-                <h4>Drag & <span style="color: tomato;"> <strong>Petri</strong></span></h4>
-                <p>A mini tool to generate a Petri dish of colors from one or various image files.</p>
-                <p>
-                    <a href="https://ereyes.github.io/drag_and_hue/"><i class="fa-solid fa-chevron-left"></i> 
-                        Back to <strong>Drag</strong> <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="d&h logo" width="30px"><strong>Hue</strong></a>
-                </p>  
-            </div>
-        </section>
-        <section>
-            <div id="drop-zone" ondragover="event.preventDefault()" ondrop="handleDropZone(event)">Drop image files here</div>
-        </section>
-    </div>
-    
-    <div id="controls">
-        <span id="file-count">No files added</span>
-        <label for="file-input"><i class="fa-regular fa-folder-open"></i> Add Images</label>
-        <input id="file-input" type="file" accept="image/*" multiple onchange="handleFiles(this.files)">
-        
-        <span>Radial axis:</span>
-        <select id="y-axis-select" onchange="redraw()">
-            <option value="saturation" selected>Saturation</option>
-            <option value="brightness">Brightness</option>
-            <option value="darker">Darker to Edges</option>
-            <option value="brighter">Brighter to Edges</option>
-        </select>
-        &nbsp;
-        <button onclick="saveCanvas('drag_n_petri', 'png')"><i class="fa-solid fa-download"></i> Save Canvas</button>
-        <button onclick="location.reload();"><i class="fa-solid fa-repeat"></i> Restart</button>
-    </div>
-    <div id="preview">
-        <img id="preview-image" src="" alt="Preview">
-        <button id="preview-close" onclick="closePreview()">Close</button>
-    </div>
-    <script>
-        let images = [];
-        let colors = [];
-        let maxRadius;
+  <div id="controls">
+    <span id="file-count">No files added</span>
+    <label for="file-input"><i class="fa-regular fa-folder-open"></i> Add Images</label>
+    <input id="file-input" type="file" accept="image/*" multiple onchange="handleFiles(this.files)">
 
-        function setup() {
-            resizeCanvasProperly();
-            noLoop();
-            colorMode(HSB, 360, 100, 100);
+    <span>Radial axis:</span>
+    <select id="y-axis-select" onchange="redraw()">
+      <option value="saturation" selected>Saturation</option>
+      <option value="brightness">Brightness</option>
+      <option value="darker">Darker to Edges</option>
+      <option value="brighter">Brighter to Edges</option>
+    </select>
+    &nbsp;
+    <button onclick="saveCanvas('drag_n_petri', 'png')"><i class="fa-solid fa-download"></i> Save Canvas</button>
+    <button onclick="location.reload();"><i class="fa-solid fa-repeat"></i> Restart</button>
+  </div>
+  <div id="preview">
+    <img id="preview-image" src="" alt="Preview">
+    <button id="preview-close" onclick="closePreview()">Close</button>
+  </div>
+  
+  <script>
+    let images = [];
+    let colors = [];
+    let maxRadius;
+
+    function setup() {
+      resizeCanvasProperly();
+      noLoop();
+      // Use HSB with an alpha channel (range 0-100)
+      colorMode(HSB, 360, 100, 100, 100);
+    }
+
+    function draw() {
+      background("#f5f5f5");
+      translate(width / 2, height / 2);
+
+      maxRadius = min(width, height) * 0.4; // Ensure circle fits within canvas
+
+      // Draw the thin circumference line as a color reference
+      noFill();
+      strokeWeight(2);
+      for (let i = 0; i < 360; i++) {
+        let hue = i;
+        stroke(hue, 100, 100);
+        let x = maxRadius * cos(radians(i));
+        let y = maxRadius * sin(radians(i));
+        point(x, y);
+      }
+
+      // Get the radial axis mode from the selector
+      const radialMode = document.getElementById('y-axis-select').value;
+
+      // Draw circles for each extracted color, using slight opacity and adjusting size based on frequency
+      for (let i = 0; i < colors.length; i++) {
+        let { hsl, frequency } = colors[i];
+        let [h, s, b] = hsl;
+        let angle = radians(h);
+        let distance;
+
+        if (radialMode === 'saturation') {
+          distance = map(s, 0, 100, 0, maxRadius);
+        } else if (radialMode === 'brightness') {
+          distance = map(b, 0, 100, 0, maxRadius);
+        } else if (radialMode === 'darker') {
+          distance = map(b, 100, 0, 0, maxRadius);
+        } else if (radialMode === 'brighter') {
+          distance = map(b, 0, 100, 0, maxRadius);
         }
 
-        function draw() {
-            background("#f5f5f5");
-            translate(width / 2, height / 2);
+        let x = distance * cos(angle);
+        let y = distance * sin(angle);
 
-            maxRadius = min(width, height) * 0.4; // Ensure circle fits within canvas
+        noStroke();
+        // Draw with slight opacity (alpha set to 80 out of 100)
+        fill(h, s, b, 80);
 
-            // Draw the thin circumference line as a color reference
-            noFill();
-            strokeWeight(2);
-            for (let i = 0; i < 360; i++) {
-                let hue = i;
-                stroke(hue, 100, 100);
-                let x = maxRadius * cos(radians(i));
-                let y = maxRadius * sin(radians(i));
-                point(x, y);
-            }
+        // Map the frequency (percentage) to a circle size (for example, from 10 to 50 pixels)
+        let circleSize = map(frequency, 0, 100, 10, 50, true);
+        ellipse(x, y, circleSize, circleSize);
 
-            // Adjust circle size based on the number of images
-            let circleSize = map(colors.length, 1, 50, 50, 10, true);
+        // Store the circle's position and size for the interactive preview
+        colors[i].x = x + width / 2;
+        colors[i].y = y + height / 2;
+        colors[i].size = circleSize;
+      }
+    }
 
-            // Get radial axis mode
-            const radialMode = document.getElementById('y-axis-select').value;
+    function windowResized() {
+      resizeCanvasProperly();
+      redraw();
+    }
 
-            // Draw circles for the extracted colors based on hue and selected radial axis
-            for (let i = 0; i < colors.length; i++) {
-                let [h, s, b] = colors[i].hsl;
-                let angle = radians(h);
-                let distance;
+    function resizeCanvasProperly() {
+      const size = min(windowWidth * 0.9, windowHeight * 0.6);
+      createCanvas(size, size);
+    }
 
-                if (radialMode === 'saturation') {
-                    distance = map(s, 0, 100, 0, maxRadius);
-                } else if (radialMode === 'brightness') {
-                    distance = map(b, 0, 100, 0, maxRadius);
-                } else if (radialMode === 'darker') {
-                    distance = map(b, 100, 0, 0, maxRadius);
-                } else if (radialMode === 'brighter') {
-                    distance = map(b, 0, 100, 0, maxRadius);
-                }
-
-                let x = distance * cos(angle);
-                let y = distance * sin(angle);
-
-                noStroke();
-                fill(h, s, b);
-                ellipse(x, y, circleSize, circleSize);
-
-                // Store circle position and size
-                colors[i].x = x + width / 2;
-                colors[i].y = y + height / 2;
-                colors[i].size = circleSize;
-            }
+    function mousePressed() {
+      colors.forEach(({ file, x, y, size }) => {
+        if (dist(mouseX, mouseY, x, y) < size / 2) {
+          showPreview(file);
         }
+      });
+    }
 
-        function windowResized() {
-            resizeCanvasProperly();
-            redraw();
+    function handleDropZone(event) {
+      event.preventDefault();
+      handleFiles(event.dataTransfer.files);
+    }
+
+    function handleFiles(files) {
+      Array.from(files).forEach((file) => {
+        if (file.type.startsWith('image/')) {
+          const img = new Image();
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            img.src = e.target.result;
+            img.onload = () => extractColor(img, file);
+          };
+          reader.readAsDataURL(file);
         }
+      });
+    }
 
-        function resizeCanvasProperly() {
-            const size = min(windowWidth * 0.9, windowHeight * 0.6);
-            createCanvas(size, size);
+    // Helper function to calculate how dominant the target color is within the image.
+    function calculateColorFrequency(p5Img, targetRgb) {
+      p5Img.loadPixels();
+      let total = p5Img.width * p5Img.height;
+      let count = 0;
+      const threshold = 50; // Adjust this threshold to set the sensitivity of color matching
+      for (let i = 0; i < total; i++) {
+        let index = i * 4;
+        let r = p5Img.pixels[index];
+        let g = p5Img.pixels[index + 1];
+        let b = p5Img.pixels[index + 2];
+        let d = dist(r, g, b, targetRgb[0], targetRgb[1], targetRgb[2]);
+        if (d < threshold) {
+          count++;
         }
+      }
+      // Return the percentage of pixels that are similar to the target color.
+      return (count / total) * 100;
+    }
 
-        function mousePressed() {
-            colors.forEach(({ file, x, y, size }) => {
-                if (dist(mouseX, mouseY, x, y) < size / 2) {
-                    showPreview(file);
-                }
-            });
+    function extractColor(img, file) {
+      const colorThief = new ColorThief();
+      // Extract the dominant RGB color from the image.
+      const rgb = colorThief.getColor(img);
+      // Convert the HTML image to a p5 image.
+      const p5Image = createImage(img.width, img.height);
+      p5Image.drawingContext.drawImage(img, 0, 0, img.width, img.height);
+
+      // Calculate the frequency percentage of the dominant color.
+      const frequency = calculateColorFrequency(p5Image, rgb);
+
+      const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+
+      images.push({ img: p5Image, hsl, file });
+      colors.push({ hsl, file, frequency });
+      document.getElementById("file-count").innerText = `${images.length} file(s) added`;
+      redraw();
+    }
+
+    function rgbToHsl(r, g, b) {
+      r /= 255;
+      g /= 255;
+      b /= 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      let h, s, l = (max + min) / 2;
+
+      if (max === min) {
+        h = s = 0; // achromatic
+      } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
         }
+        h /= 6;
+      }
+      return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+    }
 
-        function handleDropZone(event) {
-            event.preventDefault();
-            handleFiles(event.dataTransfer.files);
-        }
+    function showPreview(file) {
+      const preview = document.getElementById("preview");
+      const previewImage = document.getElementById("preview-image");
+      previewImage.src = URL.createObjectURL(file);
+      preview.style.visibility = "visible";
+    }
 
-        function handleFiles(files) {
-            Array.from(files).forEach((file) => {
-                if (file.type.startsWith('image/')) {
-                    const img = new Image();
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        img.src = e.target.result;
-                        img.onload = () => extractColor(img, file);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        function extractColor(img, file) {
-            const colorThief = new ColorThief();
-            const rgb = colorThief.getColor(img);
-            const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
-
-            // Convert HTML Image to p5 Image
-            const p5Image = createImage(img.width, img.height);
-            p5Image.drawingContext.drawImage(img, 0, 0, img.width, img.height);
-
-            images.push({ img: p5Image, hsl, file });
-            colors.push({ hsl, file });
-            document.getElementById("file-count").innerText = `${images.length} file(s) added`;
-            redraw(); // Trigger p5.js redraw
-        }
-
-        function rgbToHsl(r, g, b) {
-            r /= 255;
-            g /= 255;
-            b /= 255;
-            const max = Math.max(r, g, b);
-            const min = Math.min(r, g, b);
-            let h, s, l = (max + min) / 2;
-
-            if (max === min) {
-                h = s = 0; // achromatic
-            } else {
-                const d = max - min;
-                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-                switch (max) {
-                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                    case g: h = (b - r) / d + 2; break;
-                    case b: h = (r - g) / d + 4; break;
-                }
-                h /= 6;
-            }
-            return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
-        }
-
-        function showPreview(file) {
-            const preview = document.getElementById("preview");
-            const previewImage = document.getElementById("preview-image");
-            previewImage.src = URL.createObjectURL(file);
-            preview.style.visibility = "visible";
-        }
-
-        function closePreview() {
-            const preview = document.getElementById("preview");
-            preview.style.visibility = "hidden";
-        }
-    </script>
+    function closePreview() {
+      const preview = document.getElementById("preview");
+      preview.style.visibility = "hidden";
+    }
+  </script>
 </body>
 </html>
