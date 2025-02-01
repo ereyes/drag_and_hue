@@ -1,0 +1,366 @@
+<!-- *************************
+    A mini tool to generate a 3D cloud of colors from one or various image files. 
+    Choose between dark and light mode.
+    ereyes.github.io
+    Paris, 02.2025
+    License: Creative Commons CC BY-SA 4.0
+    ************************* 
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drag & Cloud</title>
+  <!-- p5.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <!-- Font Awesome for icons (optional) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <style>
+    /* Base styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #ccc;
+      color: white;
+      overflow: hidden;
+    }
+    /* Light mode styles (toggled via a class) */
+    body.light-mode {
+      background: #f0f0f0; /* 240 in hex is close to f0f0f0 */
+      color: #000;
+    }
+    /* Header with title and additional info */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 20;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    /* When in light mode, remove the header background */
+    body.light-mode header {
+      background: transparent;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2em;
+    }
+    header p {
+      margin: 5px 0;
+      font-size: 0.9em;
+    }
+    header p a {
+      color: inherit;
+      text-decoration: none;
+    }
+    header p a img {
+      vertical-align: middle;
+    }
+    /* Drop zone (adjusted for the larger header) */
+    #dropzone {
+      position: fixed;
+      top: 160px; /* pushed down below header */
+      left: 50%;
+      transform: translateX(-50%);
+      border: 2px dashed #888;
+      border-radius: 10px;
+      padding: 10px 20px;
+      text-align: center;
+      width: 80%;
+      max-width: 500px;
+      background: rgba(100, 100, 100, 0.7);
+      z-index: 15;
+      cursor: pointer;
+    }
+    /* Controls section (always visible) */
+    #controls {
+      position: fixed;
+      top: 230px; /* pushed further down */
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      text-align: center;
+      background: rgba(50, 50, 50, 0.8);
+      border-radius: 10px;
+      z-index: 15;
+    }
+    /* Remove the background for the controls when in light mode */
+    body.light-mode #controls {
+      background: transparent;
+    }
+    #controls label {
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    /* Hide the file input triggered by the label */
+    #controls input[type="file"] {
+      display: none;
+    }
+    /* Optional: style the buttons */
+    #controls button {
+      margin: 0 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header with Title and Additional Info -->
+  <header>
+    <h1>Drag & Cloud</h1>
+    <p>A mini tool to generate a 3D cloud of colors from one or various image files.</p>
+    <p>
+      <a href="https://ereyes.github.io/drag_and_hue/">
+        <i class="fa-solid fa-chevron-left"></i> 
+        Back to <strong>Drag</strong> <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="d&h logo" width="30px"><strong>Hue</strong>
+      </a>
+    </p>
+  </header>
+
+  <!-- Drop Zone -->
+  <div id="dropzone">
+    Drag and drop images here, or click to upload.
+  </div>
+
+  <!-- Controls (always visible) -->
+  <div id="controls">
+    <span id="file-count">No files added</span>
+    <label for="file-input">
+      <i class="fa-regular fa-folder-open"></i> Add Images
+    </label>
+    <input id="file-input" type="file" accept="image/*" multiple onchange="handleFiles(this.files)">
+    <input type="checkbox" id="theme-toggle" />Black/Light Mode
+    &nbsp;
+    <button onclick="saveCanvas('drag_n_petri', 'png')">
+      <i class="fa-solid fa-download"></i> Save Canvas
+    </button>
+    <button onclick="location.reload();">
+      <i class="fa-solid fa-repeat"></i> Restart
+    </button>
+  </div>
+
+  <script>
+    // Global variables
+    let colorGroups = [];
+    let rotationY = 0;
+    let loadedFiles = 0;
+
+    // p5.js setup function
+    function setup() {
+      createCanvas(windowWidth, windowHeight, WEBGL);
+
+      // Get UI elements
+      const dropzone = document.getElementById("dropzone");
+      const fileInput = document.getElementById("file-input");
+      const themeToggle = document.getElementById("theme-toggle");
+
+      // --- Drop Zone Events ---
+      dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = "#fff";
+      });
+      dropzone.addEventListener("dragleave", () => {
+        dropzone.style.borderColor = "#888";
+      });
+      dropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = "#888";
+        handleFiles(e.dataTransfer.files);
+      });
+      dropzone.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      // --- Theme Toggle ---
+      if (themeToggle) {
+        themeToggle.addEventListener("change", (e) => {
+          document.body.classList.toggle("light-mode", e.target.checked);
+        });
+      }
+    }
+
+    // p5.js windowResized event to keep the canvas responsive.
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+    }
+
+    // Process multiple files at once.
+    function handleFiles(files) {
+      for (let i = 0; i < files.length; i++) {
+        handleFile(files[i]);
+      }
+    }
+
+    // Process an individual file (if it's an image).
+    function handleFile(file) {
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          let dataUrl = e.target.result;
+          loadImage(dataUrl, (loadedImg) => {
+            loadedFiles++;
+            updateFileCount();
+            processImage(loadedImg, loadedFiles, dataUrl);
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // Update the file count display.
+    function updateFileCount() {
+      const countSpan = document.getElementById("file-count");
+      countSpan.innerText =
+        loadedFiles === 0
+          ? "No files added"
+          : loadedFiles + (loadedFiles === 1 ? " file added" : " files added");
+    }
+
+    // Process an image:
+    // - For the first three images, decompose it into multiple points (pixel mode).
+    // - For images beyond three, represent the entire image as one cloud point (cloud mode)
+    //   and store its data URL.
+    function processImage(img, index, dataUrl) {
+      if (index <= 3) {
+        // --- Pixel Mode ---
+        img.resize(100, 100); // Resize for performance
+        img.loadPixels();
+        const colorMap = new Map();
+
+        for (let x = 0; x < img.width; x++) {
+          for (let y = 0; y < img.height; y++) {
+            const idx = (x + y * img.width) * 4;
+            const r = img.pixels[idx];
+            const g = img.pixels[idx + 1];
+            const b = img.pixels[idx + 2];
+            const a = img.pixels[idx + 3];
+            if (a > 0) {
+              const key = `${r},${g},${b}`;
+              if (!colorMap.has(key)) {
+                colorMap.set(key, []);
+              }
+              // Generate a random position in spherical coordinates.
+              const theta = random(TWO_PI);
+              const phi = random(PI);
+              const radius = random(200, 500);
+              const posX = radius * sin(phi) * cos(theta);
+              const posY = radius * sin(phi) * sin(theta);
+              const posZ = radius * cos(phi);
+              colorMap.get(key).push({ x: posX, y: posY, z: posZ });
+            }
+          }
+        }
+
+        colorMap.forEach((positions, colorKey) => {
+          const [r, g, b] = colorKey.split(",").map(Number);
+          let avgX = 0, avgY = 0, avgZ = 0;
+          positions.forEach((pos) => {
+            avgX += pos.x;
+            avgY += pos.y;
+            avgZ += pos.z;
+          });
+          avgX /= positions.length;
+          avgY /= positions.length;
+          avgZ /= positions.length;
+
+          const len = sqrt(avgX ** 2 + avgY ** 2 + avgZ ** 2);
+          const scale = random(200, 500) / len;
+          avgX *= scale;
+          avgY *= scale;
+          avgZ *= scale;
+
+          colorGroups.push({
+            color: color(r, g, b),
+            position: { x: avgX, y: avgY, z: avgZ },
+            size: positions.length, // Number of pixels in that color group
+            mode: "pixel"
+          });
+        });
+      } else {
+        // --- Cloud Mode ---
+        // Resize and load pixels to compute a dominant color.
+        img.resize(100, 100);
+        img.loadPixels();
+        const frequencyMap = new Map();
+
+        for (let x = 0; x < img.width; x++) {
+          for (let y = 0; y < img.height; y++) {
+            const idx = (x + y * img.width) * 4;
+            const r = img.pixels[idx];
+            const g = img.pixels[idx + 1];
+            const b = img.pixels[idx + 2];
+            const a = img.pixels[idx + 3];
+            if (a > 0) {
+              const key = `${r},${g},${b}`;
+              frequencyMap.set(key, (frequencyMap.get(key) || 0) + 1);
+            }
+          }
+        }
+
+        let dominantColor = null;
+        let maxCount = 0;
+        frequencyMap.forEach((count, key) => {
+          if (count > maxCount) {
+            maxCount = count;
+            dominantColor = key;
+          }
+        });
+
+        // Generate a random 3D position for the cloud point.
+        const theta = random(TWO_PI);
+        const phi = random(PI);
+        const radius = random(200, 500);
+        const posX = radius * sin(phi) * cos(theta);
+        const posY = radius * sin(phi) * sin(theta);
+        const posZ = radius * cos(phi);
+
+        // Map the dominant color frequency (fraction) to a point size.
+        const fraction = maxCount / (img.width * img.height);
+        const pointSize = map(fraction, 0, 1, 5, 50);
+        const [r, g, b] = dominantColor.split(",").map(Number);
+
+        colorGroups.push({
+          color: color(r, g, b),
+          position: { x: posX, y: posY, z: posZ },
+          size: pointSize,
+          mode: "cloud",
+          imagePreview: dataUrl // Stored for potential future use.
+        });
+      }
+    }
+
+    // p5.js draw loop.
+    function draw() {
+      // Use 240 as the background in light mode, otherwise black.
+      const isLight = document.body.classList.contains("light-mode");
+      background(isLight ? 240 : 0);
+      if (!colorGroups.length) return;
+
+      orbitControl();
+      rotationY += 0.001;
+      rotateY(rotationY);
+
+      // Draw each point.
+      for (const group of colorGroups) {
+        const pointSize = group.mode === "pixel"
+          ? map(group.size, 1, 100, 2, 20)
+          : group.size;
+        stroke(group.color);
+        strokeWeight(pointSize);
+        point(group.position.x, group.position.y, group.position.z);
+      }
+    }
+  </script>
+</body>
+</html>
