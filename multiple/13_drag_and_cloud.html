@@ -15,13 +15,16 @@
   <title>Drag & Cloud</title>
   <!-- p5.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
-  <!-- Font Awesome for icons (optional) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+  integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-  />
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+      rel="stylesheet">
+  <link rel="stylesheet" href="https://ereyes.github.io/drag_and_hue/style_and_hue.css">
+  <link rel="icon" href="https://ereyes.github.io/drag_and_hue/logo.png">
   <style>
     /* Base styles */
     body {
@@ -115,10 +118,10 @@
     }
   </style>
 </head>
-<body>
+<body class="lora-400">
   <!-- Header with Title and Additional Info -->
   <header>
-    <h1>Drag & Cloud</h1>
+    <h1>Drag & <span style="color: tomato;"> <strong>Cloud</strong></h1>
     <p>A mini tool to generate a 3D cloud of colors from one or various image files.</p>
     <p>
       <a href="https://ereyes.github.io/drag_and_hue/">
