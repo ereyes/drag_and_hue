@@ -3,281 +3,287 @@
     A mini tool to draw color circles from various image files. 
     ereyes.github.io, Paris
     v01 - 02.2024
-    v02 - 01.2025
+    v02 - 02.2025
     License: Creative Commons CC BY-SA 4.0
     ************************* 
 -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drag & Circles</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drag & Circles</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
-        rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://ereyes.github.io/drag_and_hue/style_and_hue.css">
-    <link rel="icon" href="https://ereyes.github.io/drag_and_hue/logo.png">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.umd.js"></script>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
-        #instructions {
-            text-align: center;
-        }
-        #dropZone {
-            width: 300px;
-            height: 70px;
-            border: 2px dashed #ccc;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            font-size: 1.2rem;
-            color: #aaa;
-            background-color: rgba(255, 255, 255, 0.8);
-            pointer-events: auto;
-            z-index: 10;
-        }
-        #canvas-container {
-            width: 65vw;
-            height: 45vh;
-            margin-right: auto;
-            margin-left:auto;
-            margin-top:-2%;
-            position: relative;
-        }
-        canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-            border: 1px solid gray;
-        }
-        #controls {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 10px 20px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        button {
-
-        }
-
-        #imagePreview {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            max-width: 50%;
-            max-height: 50%;
-            display: none;
-            border: 5px solid rgba(0, 0, 0, 0.5);
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-        
-        @media (max-width: 800px) {
-            .ui-bars {
-                font-size: 70%;
-                text-align: center;
-                line-height:1.2em;
-
-            }
-        }
-    </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+    rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://ereyes.github.io/drag_and_hue/style_and_hue.css" />
+  <link rel="icon" href="https://ereyes.github.io/drag_and_hue/logo.png" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.umd.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Lora', serif;
+    }
+    #instructions {
+      text-align: center;
+      padding: 10px;
+    }
+    #dropZone {
+      width: 300px;
+      height: 70px;
+      border: 2px dashed #ccc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-size: 1.2rem;
+      color: #aaa;
+      background-color: rgba(255, 255, 255, 0.8);
+      pointer-events: auto;
+      z-index: 10;
+      margin: 20px auto;
+    }
+    /* Make the canvas container a bit less wide and add more bottom margin */
+    #canvas-container {
+      width: 60%;
+      height: 45vh;
+      margin: 0 auto 50px auto; /* bottom margin of 50px */
+      position: relative;
+    }
+    canvas {
+      display: block;
+      margin-top: 5px;
+    }
+    /* Controls are in document flow below the header */
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px;
+      background-color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 0px;
+      text-align: center;
+      margin-top: -35px;
+    }
+    button {
+      margin: 5px;
+    }
+    #imagePreview {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 50%;
+      max-height: 50%;
+      display: none;
+      border: 5px solid rgba(0, 0, 0, 0.5);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+  </style>
 </head>
-<body class="lora-400">
-    <div class="content-wrapper">
-        <section id="instructions-section">
-            <div id="welcome">
-                <h4>Drag & <span style="color: tomato;"> <strong>Circles</strong></span> </h4>
-                <p>A simple drag-and-drop tool to create circles of colors from one or various image files.</p>
-                <p>Circles are filled with the most dominant color, and their strokes are set to the second most representative color.</p>
-                <p>
-                    <a href="https://ereyes.github.io/drag_and_hue/"><i class="fa-solid fa-chevron-left"></i> 
-                        Back to <strong>Drag</strong> <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="d&h logo" width="30px"><strong>Hue</strong></a>
-                </p>    
-            </div>
-        </section>
-        <section style="margin-right: auto; margin-left: auto;">
-            <div id="dropZone">Drag & drop images here</div>
-        </section>
-    </div>
+<body>
+  <div class="content-wrapper">
+    <section id="instructions-section">
+      <div id="welcome">
+        <h4>Drag & <span style="color: tomato;"><strong>Circles</strong></span></h4>
+        <p>A simple drag-and-drop tool to create circles of colors from one or various image files.</p>
+        <p>Circles are filled with the most dominant color, and their strokes are set to the second most representative color.</p>
+        <p>
+          <a href="https://ereyes.github.io/drag_and_hue/"><i class="fa-solid fa-chevron-left"></i>
+            Back to <strong>Drag</strong> <img src="https://ereyes.github.io/drag_and_hue/logo.png" alt="d&h logo" width="30px"><strong>Hue</strong>
+          </a>
+        </p>
+      </div>
+    </section>
+    <section style="margin: 0 auto;">
+      <div id="dropZone">Drag & drop images here</div>
+    </section>
+  </div>
 
-    <div id="canvas-container"></div>
-    <img id="imagePreview" />
+  <!-- Controls Section (placed below the content wrapper) -->
+  <div id="controls">
+    <span id="image_count"># images: 0</span>
+    <input type="file" id="file-selector" multiple style="display: none;" />
+    <button id="file-selector-button"><i class="fa-regular fa-folder-open"></i> add images</button>
+    <button id="save-button"><i class="fa-solid fa-download"></i> save canvas</button>
+    <button onclick="location.reload();"><i class="fa-solid fa-repeat"></i> restart</button>
+  </div>
 
-    <div id="controls" class="ui-bars">
-        <span id="image_count"># images: 0</span>
-        <input type="file" id="file-selector" multiple style="display: none;">
-        <button id="file-selector-button"><i class="fa-regular fa-folder-open"></i> add images</button>        
-        <button id="save-button"><i class="fa-solid fa-download"></i> save canvas</button>
-        <button onclick="location.reload();"><i class="fa-solid fa-repeat"></i> restart</button>
-    </div>
+  <div id="canvas-container"></div>
+  <img id="imagePreview" />
 
-    <script>
-        let images = [];
-        let imagePreviewElement = document.getElementById('imagePreview');
-        let imageCountElement = document.getElementById('image_count');
-        let dropZone = document.getElementById('dropZone');
-        let fileSelector = document.getElementById('file-selector');
-        let fileSelectorButton = document.getElementById('file-selector-button');
+  <script>
+    let images = [];
+    let imagePreviewElement = document.getElementById('imagePreview');
+    let imageCountElement = document.getElementById('image_count');
+    let dropZone = document.getElementById('dropZone');
+    let fileSelector = document.getElementById('file-selector');
+    let fileSelectorButton = document.getElementById('file-selector-button');
 
-        // File input click event
-        fileSelectorButton.addEventListener('click', () => {
-            fileSelector.click();
-        });
+    // File input click event
+    fileSelectorButton.addEventListener('click', () => {
+      fileSelector.click();
+    });
 
-        // Handle files from input
-        fileSelector.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-        });
+    // Handle files from input
+    fileSelector.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+    });
 
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = '#007bff';
-        });
+    // Drag and drop events
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = '#007bff';
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.borderColor = '#ccc';
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = '#ccc';
+      handleFiles(e.dataTransfer.files);
+    });
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.style.borderColor = '#ccc';
-        });
+    function setup() {
+      let canvasElement = createCanvas(windowWidth * 0.6, windowHeight * 0.45);
+      canvasElement.parent('canvas-container');
+      canvasElement.mousePressed(handleCircleClick);
+      noLoop();
+    }
 
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = '#ccc';
-            handleFiles(e.dataTransfer.files);
-        });
+    // In draw(), we smoothly animate each circle’s position and size toward its target values.
+    function draw() {
+      background(240);
+      const totalFiles = images.length;
+      imageCountElement.textContent = `# images: ${totalFiles}`;
 
-        function setup() {
-            let canvasElement = createCanvas(windowWidth * 0.65, windowHeight * 0.45);
-            canvasElement.parent('canvas-container');
-            canvasElement.mousePressed(handleCircleClick);
-            noLoop();
+      // Compute a base size based on the canvas dimensions and the number of circles.
+      const baseSize = totalFiles > 0
+        ? Math.min(width, height) / (8 + Math.sqrt(totalFiles))
+        : 40;
+
+      images.forEach((imgData) => {
+        // Determine fill and stroke colors.
+        let [r1, g1, b1] = imgData.colors[0]; // dominant color
+        let [r2, g2, b2] = imgData.colors[1]; // second most dominant
+
+        // Set the target size (if not already set, it was assigned when added or during updateTargets)
+        imgData.targetSize = baseSize;
+        // Smoothly interpolate current size to target size.
+        imgData.size = lerp(imgData.size, imgData.targetSize, 0.1);
+
+        // Smoothly animate current position toward the target position.
+        imgData.x = lerp(imgData.x, imgData.targetX, 0.1);
+        imgData.y = lerp(imgData.y, imgData.targetY, 0.1);
+
+        // Set stroke weight relative to the circle size.
+        const strokeWeightValue = Math.max(2, imgData.size / 5);
+        fill(r1, g1, b1);
+        stroke(r2, g2, b2);
+        strokeWeight(strokeWeightValue);
+        circle(imgData.x, imgData.y, imgData.size);
+      });
+    }
+
+    // On circle click, show a preview of the image.
+    function handleCircleClick() {
+      let mouseXPos = mouseX;
+      let mouseYPos = mouseY;
+      for (let imgData of images) {
+        if (dist(mouseXPos, mouseYPos, imgData.x, imgData.y) < imgData.size / 2) {
+          imagePreviewElement.src = imgData.imageElement.src;
+          imagePreviewElement.style.display = 'block';
+          imagePreviewElement.onclick = () => (imagePreviewElement.style.display = 'none');
+          break;
         }
+      }
+    }
 
-        function draw() {
-            background(240);
-            let totalFiles = images.length;
-            imageCountElement.textContent = `# images: ${totalFiles}`;
+    // Handle files from drag/drop or file input.
+    function handleFiles(files) {
+      for (let i = 0; i < files.length; i++) {
+        let file = files[i];
+        let reader = new FileReader();
+        reader.onload = (event) => {
+          handleFile({ type: 'image', data: event.target.result });
+        };
+        reader.readAsDataURL(file);
+      }
+    }
 
-            //let baseSize = Math.max(15, 200 / totalFiles);
+    // Process a single file.
+    function handleFile(file) {
+      if (file.type === 'image') {
+        let imgElement = new Image();
+        imgElement.src = file.data;
+        imgElement.onload = () => {
+          let colorThief = new ColorThief();
+          let dominantColors = colorThief.getPalette(imgElement, 2);
+          // For new images, initially assign a random position.
+          const initialX = random(width);
+          const initialY = random(height);
+          images.push({
+            colors: dominantColors,
+            imageElement: imgElement,
+            x: initialX,
+            y: initialY,
+            targetX: initialX,
+            targetY: initialY,
+            size: 40,
+            targetSize: 40,
+          });
+          // Recalculate target positions for all circles.
+          updateTargets();
+          redraw();
+        };
+      }
+    }
 
-            const baseSize = Math.min(40, 200 / Math.sqrt(images.length)); // Decrease size with more images
+    // When the window is resized, assign new grid-based target positions.
+    function updateTargets() {
+      const totalFiles = images.length;
+      const newBaseSize = totalFiles > 0
+        ? Math.min(width, height) / (8 + Math.sqrt(totalFiles))
+        : 40;
+      // Determine grid dimensions.
+      const columns = ceil(sqrt(totalFiles));
+      const rows = ceil(totalFiles / columns);
+      const cellWidth = width / columns;
+      const cellHeight = height / rows;
 
-            images.forEach((imgData) => {
-                let [r1, g1, b1] = imgData.colors[0];
-                let [r2, g2, b2] = imgData.colors[1];
+      images.forEach((imgData, index) => {
+        imgData.targetSize = newBaseSize;
+        let col = index % columns;
+        let row = floor(index / columns);
+        // Add a margin within each grid cell.
+        let marginX = cellWidth * 0.1;
+        let marginY = cellHeight * 0.1;
+        let targetX = col * cellWidth + random(marginX, cellWidth - marginX);
+        let targetY = row * cellHeight + random(marginY, cellHeight - marginY);
+        imgData.targetX = targetX;
+        imgData.targetY = targetY;
+      });
+    }
 
-                let circleSize = baseSize;
-                let strokeWeightValue = Math.max(2, baseSize / 5);
+    function windowResized() {
+      resizeCanvas(windowWidth * 0.6, windowHeight * 0.45);
+      updateTargets();
+      redraw();
+    }
 
-                fill(r1, g1, b1);
-                stroke(r2, g2, b2);
-                strokeWeight(strokeWeightValue);
-
-                if (!imgData.x || !imgData.y) {
-                    let newPos = getNonOverlappingPosition(circleSize);
-                    imgData.x = newPos.x;
-                    imgData.y = newPos.y;
-                }
-
-                circle(imgData.x, imgData.y, circleSize);
-                imgData.size = circleSize;
-            });
-        }
-
-        function handleCircleClick() {
-            let mouseXPos = mouseX;
-            let mouseYPos = mouseY;
-
-            for (let imgData of images) {
-                let distance = dist(mouseXPos, mouseYPos, imgData.x, imgData.y);
-                if (distance < imgData.size / 2) {
-                    imagePreviewElement.src = imgData.imageElement.src;
-                    imagePreviewElement.style.display = 'block';
-
-                    imagePreviewElement.onclick = () => {
-                        imagePreviewElement.style.display = 'none';
-                    };
-                    break;
-                }
-            }
-        }
-
-        function handleFiles(files) {
-            for (let i = 0; i < files.length; i++) {
-                let file = files[i];
-                let reader = new FileReader();
-                reader.onload = (event) => {
-                    handleFile({ type: 'image', data: event.target.result });
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function handleFile(file) {
-            if (file.type === 'image') {
-                let imgElement = new Image();
-                imgElement.src = file.data;
-                imgElement.onload = () => {
-                    let colorThief = new ColorThief();
-                    let dominantColors = colorThief.getPalette(imgElement, 2);
-
-                    images.push({
-                        colors: dominantColors,
-                        imageElement: imgElement,
-                        x: null,
-                        y: null,
-                        size: 0
-                    });
-
-                    redraw();
-                };
-            }
-        }
-
-        function getNonOverlappingPosition(size) {
-            let maxAttempts = 100;
-            for (let i = 0; i < maxAttempts; i++) {
-                let x = random(size / 2, width - size / 2);
-                let y = random(size / 2, height - size / 2);
-
-                let overlapping = images.some(imgData => {
-                    let d = dist(x, y, imgData.x || 0, imgData.y || 0);
-                    let otherSize = imgData.size || 50;
-                    return d < (size / 2 + otherSize / 2);
-                });
-
-                if (!overlapping) {
-                    return { x, y };
-                }
-            }
-            return { x: random(width), y: random(height) };
-        }
-
-        document.getElementById('save-button').addEventListener('click', () => {
-            saveCanvas('canvas_image', 'png');
-        });
-
-        function windowResized() {
-            resizeCanvas(windowWidth * 0.65, windowHeight * 0.45);
-            redraw();
-        }
-    </script>
+    document.getElementById('save-button').addEventListener('click', () => {
+      saveCanvas('canvas_image', 'png');
+    });
+  </script>
 </body>
 </html>
