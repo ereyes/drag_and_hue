@@ -1,0 +1,1191 @@
+<!-- *************************
+    A mini game where PacMan eats images to absorb their dominant color. 
+    ereyes.github.io
+    Paris, 02.2026
+    License: Creative Commons CC BY-SA 4.0
+    ************************* 
+-->
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pac & Hue</title>
+
+  <!-- p5.js -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+
+  <style>
+    :root{
+      /* Theme vars set by body.theme-dark / body.theme-light */
+      --bg: #0b0b12;
+      --bg2: #07070c;
+      --panel: rgba(255,255,255,0.06);
+      --panel2: rgba(255,255,255,0.10);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.70);
+      --accent: rgba(255,255,255,0.14);
+      --btnbg: rgba(255,255,255,0.08);
+      --btnborder: rgba(255,255,255,0.14);
+      --btnhover: rgba(255,255,255,0.12);
+
+      /* Pac vibe */
+      --pac-blue: rgba(120, 200, 255, 0.22);
+      --pac-blue-strong: rgba(120, 200, 255, 0.55);
+    }
+
+    body.theme-dark{
+      --bg: #0b0b12;
+      --bg2: #07070c;
+      --panel: rgba(255,255,255,0.06);
+      --panel2: rgba(255,255,255,0.10);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.70);
+      --accent: rgba(255,255,255,0.14);
+      --btnbg: rgba(255,255,255,0.08);
+      --btnborder: rgba(255,255,255,0.14);
+      --btnhover: rgba(255,255,255,0.12);
+    }
+
+    body.theme-light{
+      --bg: #f4f6fb;
+      --bg2: #e9eef7;
+      --panel: rgba(0,0,0,0.04);
+      --panel2: rgba(0,0,0,0.06);
+      --text: rgba(0,0,0,0.88);
+      --muted: rgba(0,0,0,0.62);
+      --accent: rgba(0,0,0,0.12);
+      --btnbg: rgba(0,0,0,0.04);
+      --btnborder: rgba(0,0,0,0.12);
+      --btnhover: rgba(0,0,0,0.07);
+    }
+
+    html, body { height: 100%; margin: 0; overflow-x: hidden; }
+
+    body{
+      background: radial-gradient(1200px 800px at 20% 0%, var(--bg2) 0%, var(--bg) 55%, var(--bg2) 100%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .wrap{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px 16px 26px;
+      display: grid;
+      gap: 12px;
+    }
+
+    header{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap: 4px;
+    }
+
+    h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+      font-weight: 800;
+    }
+
+    .subtitle{
+      margin:0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      max-width: 680px;
+    }
+
+    .controls{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap: wrap;
+      justify-content:flex-end;
+    }
+
+    .pill{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid var(--accent);
+      backdrop-filter: blur(6px);
+    }
+
+    label.btn, button.btn{
+      cursor:pointer;
+      user-select:none;
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: var(--btnbg);
+      border: 1px solid var(--btnborder);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.2px;
+      transition: transform 120ms ease, background 120ms ease, border 120ms ease;
+    }
+    label.btn:hover, button.btn:hover{
+      background: var(--btnhover);
+      border: 1px solid color-mix(in srgb, var(--btnborder) 70%, transparent);
+      transform: translateY(-1px);
+    }
+    label.btn:active, button.btn:active{ transform: translateY(0px); }
+
+    button.btn:disabled{
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .seg{
+      display:inline-flex;
+      gap: 6px;
+      align-items:center;
+    }
+    .btn.toggle.active{
+      background: color-mix(in srgb, var(--pac-blue-strong) 30%, var(--btnbg));
+      border-color: color-mix(in srgb, var(--pac-blue-strong) 55%, var(--btnborder));
+    }
+
+    input[type="file"]{ display:none; }
+
+    .hud{
+      display:flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .stats{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+    }
+
+    .stat{
+      min-width: 122px;
+      display:flex;
+      flex-direction:column;
+      gap: 2px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid var(--accent);
+      backdrop-filter: blur(6px);
+    }
+    .stat .k{
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .stat .v{
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+    }
+
+    .swatch{
+      width: 16px;
+      height: 16px;
+      border-radius: 6px;
+      border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.22) inset;
+      display:inline-block;
+      vertical-align: middle;
+    }
+
+    .palette{
+      display:flex;
+      gap: 6px;
+      align-items:center;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid var(--accent);
+      backdrop-filter: blur(6px);
+      min-height: 22px;
+    }
+    .palette .hint{
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    #dropZone{
+      border-radius: 18px;
+      border: 1px dashed color-mix(in srgb, var(--text) 22%, transparent);
+      background: color-mix(in srgb, var(--panel) 60%, transparent);
+      padding: 12px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    #dropZone strong{
+      font-size: 13px;
+      letter-spacing: 0.2px;
+    }
+    #dropZone span{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    #dropZone.dragover{
+      border-color: rgba(120, 200, 255, 0.9);
+      background: rgba(120, 200, 255, 0.10);
+    }
+
+    #canvasWrap{
+      border-radius: 18px;
+      overflow:hidden;
+      border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+      background: #000; /* keep pac space black */
+    }
+
+    footer{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    code.kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      background: color-mix(in srgb, var(--panel2) 70%, transparent);
+      border: 1px solid var(--accent);
+      padding: 2px 6px;
+      border-radius: 8px;
+      color: color-mix(in srgb, var(--text) 92%, transparent);
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body class="theme-dark">
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1 id="uiTitle">Pac & Hue</h1>
+        <p class="subtitle" id="uiSubtitle"></p>
+      </div>
+
+      <div class="controls">
+        <div class="pill">
+          <input id="fileInput" type="file" accept="image/*" multiple />
+          <label class="btn" for="fileInput" id="btnSelect">📁 Select images</label>
+
+          <button class="btn" id="shuffleBtn">🔀 Shuffle</button>
+          <button class="btn" id="clearBtn">🧼 Clear</button>
+
+          <button class="btn" id="downloadBtn" disabled>⬇️ Download CSV</button>
+        </div>
+
+        <div class="pill">
+          <div class="seg" aria-label="Language">
+            <button class="btn toggle" id="langEN" title="English">EN</button>
+            <button class="btn toggle" id="langFR" title="Français">FR</button>
+            <button class="btn toggle" id="langPT" title="Português">PT</button>
+          </div>
+
+          <div style="width:1px;height:22px;background:var(--accent);"></div>
+
+          <div class="seg" aria-label="Theme">
+            <button class="btn toggle" id="themeDark">🌙 <span id="themeDarkText">Night</span></button>
+            <button class="btn toggle" id="themeLight">☀️ <span id="themeLightText">Light</span></button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="hud">
+      <div class="stats">
+        <div class="stat">
+          <div class="k" id="statEatenK"></div>
+          <div class="v"><span id="score">0</span></div>
+        </div>
+
+        <div class="stat">
+          <div class="k" id="statLoadedK"></div>
+          <div class="v"><span id="loaded">0</span></div>
+        </div>
+
+        <div class="stat">
+          <div class="k" id="statPacHueK"></div>
+          <div class="v">
+            <span class="swatch" id="hueSwatch" style="background:#FFD300"></span>
+            <span id="hueText">#FFD300</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="palette" id="palette"></div>
+    </div>
+
+    <div id="dropZone">
+      <div>
+        <strong id="dropTitle"></strong><br />
+        <span id="dropSubtitle"></span>
+      </div>
+      <div id="dropTip" style="color:var(--muted);font-size:12px;"></div>
+    </div>
+
+    <div id="canvasWrap"></div>
+
+    <footer id="uiFooter"></footer>
+  </div>
+
+  <script>
+    // -----------------------------
+    // i18n
+    // -----------------------------
+    const I18N = {
+      EN: {
+        subtitle: "A tiny “gamified hint” demo: drop images into the arena, move Pac Man, and when he eats an image he absorbs its dominant color.",
+        select: "📁 Select images",
+        shuffle: "🔀 Shuffle",
+        clear: "🧼 Clear",
+        download: "⬇️ Download CSV",
+        eaten: "Eaten",
+        loaded: "Loaded",
+        pacHue: "Pac Hue",
+        paletteHint: "Palette (absorbed colors): eat images to collect swatches →",
+        dropTitle: "Drag & drop images here",
+        dropSubtitleHTML: "…or drop directly on the canvas. Use <code class='kbd'>←</code> <code class='kbd'>↑</code> <code class='kbd'>→</code> <code class='kbd'>↓</code> (or <code class='kbd'>WASD</code>) to move.",
+        dropTip: "Tip: try a few distinct photos to see big hue shifts.",
+        footer: "This is intentionally not a full Pac‑Man game—just “mechanic hints” (score, collectibles, feedback loop) to illustrate the paper Visual Gamification: Intersemiotic Translations between Games and Live Image Visualization, presented at the 14th congress of the AISV.",
+        night: "Night",
+        light: "Light",
+        questLoad: "Quest: Load images",
+        questEat: (n) => `Quest: Eat ${n} image${n === 1 ? "" : "s"}`,
+        mechanic: "Mechanic hints: collectibles • score • immediate feedback",
+        empty1: "Drop a few images into the arena",
+        empty2: "Then move Pac to eat them and absorb their dominant color",
+        csvFilename: "pac-hue-colors.csv"
+      },
+      FR: {
+        subtitle: "Mini démo “gamifiée” : déposez des images dans l’arène, dirigez Pac Man, et quand il les mange il absorbe la couleur dominante.",
+        select: "📁 Choisir des images",
+        shuffle: "🔀 Mélanger",
+        clear: "🧼 Effacer",
+        download: "⬇️ CSV couleurs",
+        eaten: "Mangé",
+        loaded: "Chargé",
+        pacHue: "Teinte de Pac",
+        paletteHint: "Palette (couleurs absorbées) : mangez des images pour collecter des pastilles →",
+        dropTitle: "Glissez-déposez des images ici",
+        dropSubtitleHTML: "…ou directement sur le canvas. Utilisez <code class='kbd'>←</code> <code class='kbd'>↑</code> <code class='kbd'>→</code> <code class='kbd'>↓</code> (ou <code class='kbd'>WASD</code>) pour bouger.",
+        dropTip: "Astuce : essayez des photos bien différentes pour voir des changements de teinte.",
+        footer: "Ce n’est volontairement pas un vrai jeu Pac‑Man—juste des “indices de mécaniques” (score, collectibles, boucle de feedback) pour illustrer le paper Visual Gamification: Intersemiotic Translations between Games and Live Image Visualization, presenté au 14th congrès de l'AISV.",
+        night: "Nuit",
+        light: "Jour",
+        questLoad: "Quête : charger des images",
+        questEat: (n) => `Quête : manger ${n} image${n === 1 ? "" : "s"}`,
+        mechanic: "Indices de mécaniques : collectibles • score • feedback immédiat",
+        empty1: "Déposez quelques images dans l’arène",
+        empty2: "Puis déplacez Pac pour les manger et absorber leur couleur dominante",
+        csvFilename: "pac-hue-couleurs.csv"
+      },
+      PT: {
+        subtitle: "Pequena demo “gamificada”: coloque imagens na arena, guie o Pac Man e, quando ele as come, absorve a cor dominante.",
+        select: "📁 Selecionar imagens",
+        shuffle: "🔀 Baralhar",
+        clear: "🧼 Limpar",
+        download: "⬇️ CSV de cores",
+        eaten: "Comidas",
+        loaded: "Carregadas",
+        pacHue: "Cor do Pac",
+        paletteHint: "Paleta (cores absorvidas): coma imagens para colecionar amostras →",
+        dropTitle: "Arraste e solte imagens aqui",
+        dropSubtitleHTML: "…ou solte diretamente no canvas. Use <code class='kbd'>←</code> <code class='kbd'>↑</code> <code class='kbd'>→</code> <code class='kbd'>↓</code> (ou <code class='kbd'>WASD</code>) para mover.",
+        dropTip: "Dica: experimente fotos bem diferentes para ver grandes mudanças de cor.",
+        footer: "Isto não é um jogo Pac‑Man completo—apenas “pistas de mecânica” (pontuação, colecionáveis, feedback imediato) para ilustrar o paper Visual Gamification: Intersemiotic Translations between Games and Live Image Visualization, presented at the 14th congress of the AISV.",
+        night: "Noite",
+        light: "Dia",
+        questLoad: "Missão: carregar imagens",
+        questEat: (n) => `Missão: comer ${n} imagem${n === 1 ? "" : "s"}`,
+        mechanic: "Pistas de mecânica: colecionáveis • pontuação • feedback imediato",
+        empty1: "Solte algumas imagens na arena",
+        empty2: "Depois mova o Pac Manpara comê-las e absorver a cor dominante",
+        csvFilename: "pac-hue-cores.csv"
+      }
+    };
+
+    const LS_LANG = "pacHue.lang";
+    const LS_THEME = "pacHue.theme";
+
+    let currentLang = "EN";
+    let T = I18N[currentLang];
+
+    function detectLang() {
+      const saved = localStorage.getItem(LS_LANG);
+      if (saved && I18N[saved]) return saved;
+
+      const nav = (navigator.language || "en").toLowerCase();
+      if (nav.startsWith("fr")) return "FR";
+      if (nav.startsWith("pt")) return "PT";
+      return "EN";
+    }
+
+    function setLang(lang) {
+      if (!I18N[lang]) return;
+      currentLang = lang;
+      T = I18N[lang];
+      localStorage.setItem(LS_LANG, lang);
+
+      document.documentElement.lang = lang === "EN" ? "en" : (lang === "FR" ? "fr" : "pt");
+
+      // Top copy
+      document.getElementById("uiSubtitle").textContent = T.subtitle;
+      document.getElementById("btnSelect").textContent = T.select;
+      document.getElementById("shuffleBtn").textContent = T.shuffle;
+      document.getElementById("clearBtn").textContent = T.clear;
+      document.getElementById("downloadBtn").textContent = T.download;
+
+      // Stats
+      document.getElementById("statEatenK").textContent = T.eaten;
+      document.getElementById("statLoadedK").textContent = T.loaded;
+      document.getElementById("statPacHueK").textContent = T.pacHue;
+
+      // Drop zone
+      document.getElementById("dropTitle").textContent = T.dropTitle;
+      document.getElementById("dropSubtitle").innerHTML = T.dropSubtitleHTML;
+      document.getElementById("dropTip").textContent = T.dropTip;
+
+      // Footer
+      document.getElementById("uiFooter").textContent = T.footer;
+
+      // Theme labels
+      document.getElementById("themeDarkText").textContent = T.night;
+      document.getElementById("themeLightText").textContent = T.light;
+
+      // Active state
+      ["EN","FR","PT"].forEach(k => {
+        document.getElementById("lang" + k).classList.toggle("active", k === lang);
+      });
+
+      updateHUD(); // palette hint language
+    }
+
+    function setTheme(theme) {
+      const body = document.body;
+      const t = theme === "light" ? "theme-light" : "theme-dark";
+      body.classList.remove("theme-light", "theme-dark");
+      body.classList.add(t);
+      localStorage.setItem(LS_THEME, theme);
+
+      document.getElementById("themeDark").classList.toggle("active", theme !== "light");
+      document.getElementById("themeLight").classList.toggle("active", theme === "light");
+    }
+
+    // -----------------------------
+    // Pac & Hue (p5.js demo)
+    // -----------------------------
+
+    // World state
+    let pac;
+    let foods = [];      // { img, x, y, w, h, r, dom:{r,g,b,hex}, eaten:false, eatT:0 }
+    let effects = [];    // small pop effects
+    let sampler;         // offscreen graphics for dominant-color sampling
+
+    // UI state
+    let score = 0;
+    let loadedTotal = 0;
+
+    // palette holds unique colors with counts: {hex,r,g,b,count}
+    let palette = [];
+
+    // Tunables
+    const FOOD_MAX_DRAW = 74;
+    const FOOD_MIN_DRAW = 44;
+    const FOOD_PADDING = 12;
+    const PAC_RADIUS = 26;
+    const PAC_SPEED = 3.2;
+    const EAT_DISTANCE_FACTOR = 0.92;
+
+    const DOM_SAMPLE_SIZE = 32;
+    const DOM_SAMPLE_MARGIN = 2; // ignore edge pixels (helps with black frames/letterboxing)
+
+    function setup() {
+      const wrap = document.getElementById("canvasWrap");
+      const w = Math.min(1100, wrap.clientWidth);
+      const h = 520;
+
+      const cnv = createCanvas(w, h);
+      cnv.parent("canvasWrap");
+
+      sampler = createGraphics(DOM_SAMPLE_SIZE, DOM_SAMPLE_SIZE);
+      sampler.pixelDensity(1);
+
+      pac = new PacMan(width * 0.33, height * 0.55, PAC_RADIUS);
+
+      textFont("system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif");
+      noStroke();
+
+      wireUI();
+
+      // init language + theme
+      setLang(detectLang());
+      const savedTheme = localStorage.getItem(LS_THEME);
+      if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
+      else setTheme(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+
+      updateHUD();
+    }
+
+    function windowResized() {
+      const wrap = document.getElementById("canvasWrap");
+      const w = Math.min(1100, wrap.clientWidth);
+      resizeCanvas(w, height);
+    }
+
+    function draw() {
+      // Canvas stays black regardless of UI theme
+      background(0);
+
+      drawGrid();
+
+      pac.update();
+
+      for (const f of foods) {
+        if (!f.eaten && pac.canEat(f)) eatFood(f);
+        drawFood(f);
+      }
+
+      foods = foods.filter(f => !(f.eaten && f.eatT >= 1));
+
+      for (const e of effects) e.update();
+      effects = effects.filter(e => e.life > 0);
+      for (const e of effects) e.draw();
+
+      pac.draw();
+
+      if (foods.length === 0) drawEmptyHint();
+
+      drawMiniHUD();
+    }
+
+    function drawGrid() {
+      push();
+
+      // light-blue grid lines to evoke classic Pac-Man vibe
+      stroke(120, 200, 255, 26);
+      strokeWeight(1);
+
+      const step = 36;
+      for (let x = 0; x <= width; x += step) line(x, 0, x, height);
+      for (let y = 0; y <= height; y += step) line(0, y, width, y);
+
+      // “tunnel” edge glows
+      noStroke();
+      fill(120, 200, 255, 24);
+      rect(0, 0, 12, height);
+      rect(width - 12, 0, 12, height);
+
+      pop();
+    }
+
+    function drawEmptyHint() {
+      push();
+      fill(255, 255, 255, 210);
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      text(T.empty1, width / 2, height / 2 - 12);
+
+      fill(255, 255, 255, 150);
+      textSize(13);
+      text(T.empty2, width / 2, height / 2 + 14);
+
+      noFill();
+      stroke(120, 200, 255, 150);
+      strokeWeight(2);
+      circle(width / 2, height / 2 + 76, 72);
+      stroke(120, 200, 255, 60);
+      circle(width / 2, height / 2 + 76, 96);
+      pop();
+    }
+
+    function drawMiniHUD() {
+      push();
+      const pad = 10;
+
+      const quest = foods.length > 0 ? T.questEat(foods.length) : T.questLoad;
+
+      textAlign(LEFT, TOP);
+      textSize(12);
+      noStroke();
+      fill(255, 255, 255, 170);
+      text(quest, pad, pad);
+
+      fill(255, 255, 255, 110);
+      text(T.mechanic, pad, pad + 16);
+      pop();
+    }
+
+    // -----------------------------
+    // PacMan
+    // -----------------------------
+    class PacMan {
+      constructor(x, y, r) {
+        this.pos = createVector(x, y);
+        this.vel = createVector(0, 0);
+        this.r = r;
+
+        this.angle = 0;
+        this.lastNonZeroAngle = 0;
+
+        this.baseColor = color(255, 211, 0);
+        this.currentColor = this.baseColor;
+        this.targetColor = this.baseColor;
+
+        this.chompPulse = 0;
+      }
+
+      setTargetColor(rgb) {
+        this.targetColor = color(rgb.r, rgb.g, rgb.b);
+      }
+
+      update() {
+        const v = createVector(0, 0);
+        if (keyIsDown(LEFT_ARROW) || keyIsDown(65))  v.x -= 1;
+        if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) v.x += 1;
+        if (keyIsDown(UP_ARROW) || keyIsDown(87))    v.y -= 1;
+        if (keyIsDown(DOWN_ARROW) || keyIsDown(83))  v.y += 1;
+
+        // Optional mouse steer (click+hold)
+        if (mouseIsPressed && mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+          const toMouse = createVector(mouseX - this.pos.x, mouseY - this.pos.y);
+          if (toMouse.mag() > 6) {
+            toMouse.setMag(1);
+            v.add(toMouse);
+          }
+        }
+
+        if (v.mag() > 0) {
+          v.normalize().mult(PAC_SPEED);
+          this.vel = v;
+        } else {
+          this.vel.mult(0.85);
+          if (this.vel.mag() < 0.05) this.vel.set(0, 0);
+        }
+
+        this.pos.add(this.vel);
+
+        // wrap
+        if (this.pos.x < -this.r) this.pos.x = width + this.r;
+        if (this.pos.x > width + this.r) this.pos.x = -this.r;
+        if (this.pos.y < -this.r) this.pos.y = height + this.r;
+        if (this.pos.y > height + this.r) this.pos.y = -this.r;
+
+        if (this.vel.mag() > 0.2) {
+          this.angle = atan2(this.vel.y, this.vel.x);
+          this.lastNonZeroAngle = this.angle;
+        } else {
+          this.angle = this.lastNonZeroAngle;
+        }
+
+        this.chompPulse = max(0, this.chompPulse - 0.08);
+        this.currentColor = lerpColor(this.currentColor, this.targetColor, 0.10);
+      }
+
+      canEat(food) {
+        const d = dist(this.pos.x, this.pos.y, food.x, food.y);
+        const eatDist = (this.r + food.r) * EAT_DISTANCE_FACTOR;
+        return d <= eatDist;
+      }
+
+      draw() {
+        push();
+        translate(this.pos.x, this.pos.y);
+        rotate(this.angle);
+
+        const idle = 0.35 + 0.18 * sin(frameCount * 0.20);
+        const movingBoost = constrain(this.vel.mag() / PAC_SPEED, 0, 1);
+        let mouth = idle * (0.55 + 0.65 * movingBoost);
+        mouth -= this.chompPulse * 0.22;
+        mouth = constrain(mouth, 0.06, 0.70);
+
+        // Outline behind body (keeps Pac visible even when he turns dark)
+        noStroke();
+        fill(100, 100, 100, 190);
+        arc(0, 0, (this.r * 2) + 6, (this.r * 2) + 6, mouth, TWO_PI - mouth, PIE);
+
+        // Body
+        fill(this.currentColor);
+        arc(0, 0, this.r * 2, this.r * 2, mouth, TWO_PI - mouth, PIE);
+
+        // Eye
+        /*
+        fill(0, 0, 0, 210);
+        circle(this.r * 0.26, -this.r * 0.52, this.r * 0.22);
+        */
+
+        // subtle highlight
+        fill(255, 255, 255, 30);
+        circle(-this.r * 0.20, -this.r * 0.20, this.r * 0.55);
+
+        pop();
+      }
+    }
+
+    // -----------------------------
+    // Food (image pellets)
+    // -----------------------------
+    function drawFood(f) {
+      if (!f.img) return;
+
+      let alpha = 255;
+      let drawScale = 1;
+
+      if (f.eaten) {
+        f.eatT = min(1, f.eatT + 0.08);
+        const t = f.eatT;
+        drawScale = lerp(1, 0.15, easeOutCubic(t));
+        alpha = lerp(255, 0, easeOutCubic(t));
+      }
+
+      push();
+      translate(f.x, f.y);
+      scale(drawScale);
+
+      noFill();
+      stroke(f.dom.r, f.dom.g, f.dom.b, 190 * (alpha / 255));
+      strokeWeight(3);
+      circle(0, 0, (f.r * 2) + 10);
+
+      noStroke();
+      fill(255, 255, 255, 22 * (alpha / 255));
+      rectMode(CENTER);
+      rect(0, 0, f.w + 10, f.h + 10, 10);
+
+      tint(255, alpha);
+      imageMode(CENTER);
+      image(f.img, 0, 0, f.w, f.h);
+      noTint();
+
+      pop();
+    }
+
+    function eatFood(f) {
+      if (f.eaten) return;
+      f.eaten = true;
+      f.eatT = 0;
+
+      score += 1;
+      pac.setTargetColor(f.dom);
+      pac.chompPulse = 1;
+
+      // palette: unique + count
+      const idx = palette.findIndex(p => p.hex === f.dom.hex);
+      if (idx === -1) {
+        palette.push({ hex: f.dom.hex, r: f.dom.r, g: f.dom.g, b: f.dom.b, count: 1 });
+      } else {
+        palette[idx].count += 1;
+      }
+
+      effects.push(new PopEffect(f.x, f.y, f.dom, `+1  ${f.dom.hex}`));
+      updateHUD();
+    }
+
+    function shuffleFoods() {
+      for (const f of foods) {
+        const pos = findSpawnPosition(f.r);
+        f.x = pos.x; f.y = pos.y;
+      }
+    }
+
+    // -----------------------------
+    // Effects
+    // -----------------------------
+    class PopEffect {
+      constructor(x, y, dom, label) {
+        this.pos = createVector(x, y);
+        this.dom = dom;
+        this.label = label;
+        this.life = 1.0;
+        this.v = createVector(random(-0.3, 0.3), random(-1.6, -0.9));
+        this.parts = [];
+        for (let i = 0; i < 16; i++) {
+          this.parts.push({
+            p: createVector(x, y),
+            v: p5.Vector.random2D().mult(random(0.6, 2.6)),
+            a: random(0.85, 1.0),
+            s: random(2, 5)
+          });
+        }
+      }
+      update() {
+        this.life -= 0.02;
+        this.pos.add(this.v);
+        this.v.mult(0.98);
+        for (const pt of this.parts) {
+          pt.p.add(pt.v);
+          pt.v.mult(0.95);
+          pt.a *= 0.93;
+        }
+      }
+      draw() {
+        const a = constrain(this.life, 0, 1);
+        push();
+        noStroke();
+        for (const pt of this.parts) {
+          if (pt.a < 0.02) continue;
+          fill(this.dom.r, this.dom.g, this.dom.b, 220 * pt.a * a);
+          circle(pt.p.x, pt.p.y, pt.s);
+        }
+        textAlign(CENTER, CENTER);
+        textSize(12);
+        fill(255, 255, 255, 210 * a);
+        text(this.label, this.pos.x, this.pos.y);
+        pop();
+      }
+    }
+
+    // -----------------------------
+    // Dominant color (less accidental black)
+    // -----------------------------
+    function rgbToHsv(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const maxC = Math.max(r, g, b);
+      const minC = Math.min(r, g, b);
+      const d = maxC - minC;
+
+      let h = 0;
+      if (d !== 0) {
+        if (maxC === r) h = ((g - b) / d) % 6;
+        else if (maxC === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h /= 6;
+        if (h < 0) h += 1;
+      }
+
+      const s = maxC === 0 ? 0 : d / maxC;
+      const v = maxC;
+      return { h, s, v };
+    }
+
+    function computeDominantColor(p5img) {
+      sampler.clear();
+      sampler.image(p5img, 0, 0, DOM_SAMPLE_SIZE, DOM_SAMPLE_SIZE);
+      sampler.loadPixels();
+
+      const size = DOM_SAMPLE_SIZE;
+      const pix = sampler.pixels;
+
+      const pick = (minV, minS, margin) => {
+        const buckets = new Map(); // key -> { w, sumR, sumG, sumB }
+
+        for (let i = 0; i < pix.length; i += 4) {
+          const a = pix[i + 3];
+          if (a < 80) continue;
+
+          const p = i >> 2;
+          const x = p % size;
+          const y = (p / size) | 0;
+
+          if (margin > 0) {
+            if (x < margin || x >= (size - margin) || y < margin || y >= (size - margin)) continue;
+          }
+
+          const r = pix[i];
+          const g = pix[i + 1];
+          const b = pix[i + 2];
+
+          const { s, v } = rgbToHsv(r, g, b);
+          if (v < minV) continue;
+          if (s < minS) continue;
+
+          // Weight favors vivid + not-too-dark pixels
+          const w = (0.25 + s * s) * (0.25 + v);
+
+          // 4-bit quantization
+          const rq = r >> 4;
+          const gq = g >> 4;
+          const bq = b >> 4;
+          const key = (rq << 8) | (gq << 4) | (bq);
+
+          let entry = buckets.get(key);
+          if (!entry) {
+            entry = { w: 0, sumR: 0, sumG: 0, sumB: 0 };
+            buckets.set(key, entry);
+          }
+
+          entry.w += w;
+          entry.sumR += r * w;
+          entry.sumG += g * w;
+          entry.sumB += b * w;
+        }
+
+        if (buckets.size === 0) return null;
+
+        let best = null;
+        for (const e of buckets.values()) {
+          if (!best || e.w > best.w) best = e;
+        }
+
+        const r = Math.round(best.sumR / best.w);
+        const g = Math.round(best.sumG / best.w);
+        const b = Math.round(best.sumB / best.w);
+
+        return { r, g, b, hex: rgbToHex(r, g, b) };
+      };
+
+      return (
+        pick(0.22, 0.18, DOM_SAMPLE_MARGIN) || // vivid + bright
+        pick(0.12, 0.10, DOM_SAMPLE_MARGIN) || // moderate
+        pick(0.06, 0.00, DOM_SAMPLE_MARGIN) || // allow neutrals (still ignore borders)
+        pick(0.00, 0.00, 0) ||                 // full fallback
+        { r: 255, g: 255, b: 255, hex: "#FFFFFF" }
+      );
+    }
+
+    // -----------------------------
+    // Files + drag & drop + CSV
+    // -----------------------------
+    function wireUI() {
+      const fileInput = document.getElementById("fileInput");
+      const clearBtn = document.getElementById("clearBtn");
+      const shuffleBtn = document.getElementById("shuffleBtn");
+      const dropZone = document.getElementById("dropZone");
+      const downloadBtn = document.getElementById("downloadBtn");
+
+      fileInput.addEventListener("change", (e) => {
+        const files = Array.from(e.target.files || []);
+        handleFiles(files);
+        e.target.value = "";
+      });
+
+      clearBtn.addEventListener("click", () => {
+        foods = [];
+        effects = [];
+        palette = [];
+        score = 0;
+        loadedTotal = 0;
+        pac.setTargetColor({ r: 255, g: 211, b: 0 });
+        updateHUD();
+      });
+
+      shuffleBtn.addEventListener("click", () => shuffleFoods());
+      downloadBtn.addEventListener("click", () => downloadPaletteCSV());
+
+      // Language buttons
+      document.getElementById("langEN").addEventListener("click", () => setLang("EN"));
+      document.getElementById("langFR").addEventListener("click", () => setLang("FR"));
+      document.getElementById("langPT").addEventListener("click", () => setLang("PT"));
+
+      // Theme buttons
+      document.getElementById("themeDark").addEventListener("click", () => setTheme("dark"));
+      document.getElementById("themeLight").addEventListener("click", () => setTheme("light"));
+
+      // Drop handlers
+      ["dragenter", "dragover"].forEach(evt => {
+        dropZone.addEventListener(evt, (e) => {
+          e.preventDefault(); e.stopPropagation();
+          dropZone.classList.add("dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach(evt => {
+        dropZone.addEventListener(evt, (e) => {
+          e.preventDefault(); e.stopPropagation();
+          dropZone.classList.remove("dragover");
+        });
+      });
+      dropZone.addEventListener("drop", (e) => {
+        const files = Array.from(e.dataTransfer.files || []);
+        handleFiles(files);
+      });
+
+      const canvasWrap = document.getElementById("canvasWrap");
+      ["dragenter", "dragover"].forEach(evt => {
+        canvasWrap.addEventListener(evt, (e) => {
+          e.preventDefault(); e.stopPropagation();
+          dropZone.classList.add("dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach(evt => {
+        canvasWrap.addEventListener(evt, (e) => {
+          e.preventDefault(); e.stopPropagation();
+          dropZone.classList.remove("dragover");
+        });
+      });
+      canvasWrap.addEventListener("drop", (e) => {
+        const files = Array.from(e.dataTransfer.files || []);
+        handleFiles(files);
+      });
+    }
+
+    function handleFiles(files) {
+      const imgFiles = files.filter(f => f && f.type && f.type.startsWith("image/"));
+      if (imgFiles.length === 0) return;
+
+      for (const file of imgFiles) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataURL = reader.result;
+
+          loadImage(
+            dataURL,
+            (img) => {
+              const dom = computeDominantColor(img);
+
+              const dim = chooseFoodDrawSize(img);
+              const { w, h, r } = dim;
+
+              const pos = findSpawnPosition(r);
+
+              foods.push({
+                img,
+                x: pos.x,
+                y: pos.y,
+                w, h, r,
+                dom,
+                eaten: false,
+                eatT: 0
+              });
+
+              loadedTotal += 1;
+              updateHUD();
+            },
+            () => { /* ignore invalid image */ }
+          );
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function downloadPaletteCSV() {
+      // CSV of unique colors, with RGB + count
+      const rows = [];
+      rows.push(["index","hex","r","g","b","count"].join(","));
+
+      palette.forEach((p, i) => {
+        rows.push([i + 1, p.hex, p.r, p.g, p.b, p.count].join(","));
+      });
+
+      const csv = rows.join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = T.csvFilename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+    }
+
+    // -----------------------------
+    // Spawn + sizing
+    // -----------------------------
+    function chooseFoodDrawSize(img) {
+      const maxDim = FOOD_MAX_DRAW;
+      const minDim = FOOD_MIN_DRAW;
+
+      const aspect = img.width / img.height;
+      let w, h;
+
+      if (aspect >= 1) {
+        w = maxDim;
+        h = maxDim / aspect;
+      } else {
+        h = maxDim;
+        w = maxDim * aspect;
+      }
+
+      w = Math.max(w, minDim);
+      h = Math.max(h, minDim);
+
+      const r = 0.5 * Math.max(w, h);
+      return { w, h, r };
+    }
+
+    function findSpawnPosition(r) {
+      for (let t = 0; t < 120; t++) {
+        const x = random(r + FOOD_PADDING, width - r - FOOD_PADDING);
+        const y = random(r + FOOD_PADDING, height - r - FOOD_PADDING);
+
+        const dp = dist(x, y, pac.pos.x, pac.pos.y);
+        if (dp < (pac.r + r + 38)) continue;
+
+        let ok = true;
+        for (const f of foods) {
+          if (f.eaten) continue;
+          const d = dist(x, y, f.x, f.y);
+          if (d < (r + f.r + 16)) { ok = false; break; }
+        }
+        if (ok) return { x, y };
+      }
+
+      return {
+        x: random(r + FOOD_PADDING, width - r - FOOD_PADDING),
+        y: random(r + FOOD_PADDING, height - r - FOOD_PADDING)
+      };
+    }
+
+    // -----------------------------
+    // HUD updates
+    // -----------------------------
+    function updateHUD() {
+      document.getElementById("score").textContent = String(score);
+      document.getElementById("loaded").textContent = String(loadedTotal);
+
+      // Current pac hue (target color)
+      const c = pac ? pac.targetColor : color(255, 211, 0);
+      const hex = rgbToHex(Math.round(red(c)), Math.round(green(c)), Math.round(blue(c)));
+      document.getElementById("hueText").textContent = hex;
+      document.getElementById("hueSwatch").style.background = hex;
+
+      const palEl = document.getElementById("palette");
+      const downloadBtn = document.getElementById("downloadBtn");
+      downloadBtn.disabled = palette.length === 0;
+
+      if (palette.length === 0) {
+        palEl.innerHTML = `<span class="hint">${T.paletteHint}</span>`;
+      } else {
+        palEl.innerHTML = palette
+          .map(p => `<span class="swatch" title="${p.hex}  ×${p.count}" style="background:${p.hex}"></span>`)
+          .join("");
+      }
+    }
+
+    // -----------------------------
+    // Helpers
+    // -----------------------------
+    function clamp255(n) {
+      return Math.max(0, Math.min(255, Math.round(n)));
+    }
+
+    function rgbToHex(r, g, b) {
+      const to2 = (n) => clamp255(n).toString(16).padStart(2, "0").toUpperCase();
+      return `#${to2(r)}${to2(g)}${to2(b)}`;
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+  </script>
+</body>
+</html>
