@@ -1,0 +1,2525 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pixel Decomposer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #333;
+      color: #f1f1f1;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      background: #333;
+    }
+
+    body {
+      padding: 22px;
+    }
+
+    button,
+    input,
+    select {
+      border-radius: 0;
+      font: inherit;
+    }
+
+    button,
+    select,
+    input[type="url"],
+    input[type="file"] {
+      min-height: 38px;
+      border: 1px solid #777;
+      background: #242424;
+      color: #f1f1f1;
+    }
+
+    button,
+    select {
+      cursor: pointer;
+    }
+
+    button {
+      padding: 8px 12px;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    button:hover,
+    button:focus-visible,
+    select:hover,
+    select:focus-visible,
+    input:focus-visible {
+      border-color: #f1f1f1;
+      outline: 1px solid #f1f1f1;
+      outline-offset: 1px;
+    }
+
+    input[type="url"] {
+      width: min(430px, 100%);
+      padding: 8px 10px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 6px;
+    }
+
+    .page {
+      width: min(1600px, 100%);
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #666;
+      padding-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: #bdbdbd;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.8fr) minmax(190px, 0.8fr) minmax(260px, 0.9fr);
+      gap: 12px;
+      align-items: end;
+    }
+
+    .control {
+      min-width: 0;
+    }
+
+    .control label,
+    .control-label {
+      display: block;
+      margin: 0 0 5px;
+      color: #d5d5d5;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .control select {
+      width: 100%;
+      padding: 8px 30px 8px 9px;
+    }
+
+    .url-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .url-row input {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .working-size-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .working-size-row select {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .working-size-row button {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
+    .drop-zone {
+      margin-top: 12px;
+      min-height: 58px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed #858585;
+      background: #2a2a2a;
+      color: #c8c8c8;
+      font-size: 13px;
+      text-align: center;
+      padding: 12px;
+      transition: background-color 120ms ease, border-color 120ms ease;
+    }
+
+    .drop-zone.is-over {
+      background: #444;
+      border-color: #f1f1f1;
+      color: #fff;
+    }
+
+    .status-row {
+      min-height: 34px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 8px 0 6px;
+      color: #c9c9c9;
+      font-size: 12px;
+    }
+
+    #status[data-state="error"] {
+      color: #ffb4b4;
+    }
+
+    #status[data-state="busy"] {
+      color: #fff;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      min-width: 0;
+    }
+
+    .panel-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 7px;
+      color: #e4e4e4;
+      font-size: 13px;
+    }
+
+    .panel-heading span:last-child {
+      color: #a9a9a9;
+      font-size: 11px;
+    }
+
+    .canvas-frame {
+      width: 100%;
+      margin-inline: auto;
+      background: #222;
+      border: 1px solid #666;
+      line-height: 0;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #222;
+      image-rendering: auto;
+    }
+
+    footer {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid #555;
+      color: #a9a9a9;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1050px) {
+      .controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 14px;
+      }
+
+      header {
+        display: block;
+      }
+
+      .subtitle {
+        margin-top: 5px;
+        text-align: left;
+      }
+
+      .controls,
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+
+      .status-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Pixel decomposer</h1>
+      <p class="subtitle">Load an image, then reorder its pixels without changing the canvas proportions.</p>
+    </header>
+
+    <section class="controls" aria-label="Image and decomposition controls">
+      <div class="control">
+        <label for="fileInput">Local image</label>
+        <input id="fileInput" type="file" accept="image/*">
+      </div>
+
+      <div class="control">
+        <label for="urlInput">Image URL</label>
+        <div class="url-row">
+          <input id="urlInput" type="url" inputmode="url" placeholder="https://example.com/image.jpg" autocomplete="off">
+          <button id="loadUrlButton" type="button">Load</button>
+        </div>
+      </div>
+
+      <div class="control">
+        <label for="modeSelect">Decomposition mode</label>
+        <select id="modeSelect">
+          <optgroup label="Linear sorting">
+            <option value="hue-global">Hue — all pixels</option>
+            <option value="hue-rows">Hue — each row</option>
+            <option value="hue-columns">Hue — each column</option>
+            <option value="saturation-global">Saturation — all pixels</option>
+            <option value="lightness-global">Lightness — all pixels</option>
+            <option value="luminance-global">Luminance — all pixels</option>
+            <option value="rgb-global">RGB groups — all pixels</option>
+            <option value="shuffle">Shuffle</option>
+          </optgroup>
+          <optgroup label="Spatial color fields">
+            <option value="chromatic-circle">Chromatic circle — pixel cloud</option>
+            <option value="cluster-clouds">Color clusters — separated clouds</option>
+            <option value="tone-bubbles">Color tones — packed bubbles</option>
+          </optgroup>
+          <optgroup label="Collective insect behaviors">
+            <option value="ant-pheromone">Ant colony — pheromone trails</option>
+            <option value="ant-nest">Ant colony — chambers &amp; tunnels</option>
+            <option value="swarm-flow">Swarm — alignment field</option>
+            <option value="bee-waggle">Bees — waggle communication</option>
+            <option value="bee-comb">Bees — adaptive honeycomb</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="control">
+        <label for="resolutionSelect">Working size</label>
+        <div class="working-size-row">
+          <select id="resolutionSelect">
+            <option value="1000000">Up to 1 MP</option>
+            <option value="2000000" selected>Up to 2 MP</option>
+            <option value="4000000">Up to 4 MP</option>
+            <option value="original">Original</option>
+          </select>
+          <button id="downloadButton" type="button" disabled>Download PNG</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Drop an image file or press Enter to choose one">
+      Drop an image file here, or click to choose a file.
+    </div>
+
+    <div class="status-row" aria-live="polite">
+      <span id="status" data-state="idle">No image loaded.</span>
+      <span id="dimensions"></span>
+    </div>
+
+    <main class="comparison">
+      <section class="panel" aria-labelledby="originalLabel">
+        <div class="panel-heading">
+          <span id="originalLabel">Original</span>
+          <span id="originalInfo"></span>
+        </div>
+        <div class="canvas-frame">
+          <canvas id="sourceCanvas" width="900" height="560"></canvas>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="resultLabel">
+        <div class="panel-heading">
+          <span id="resultLabel">Visualization</span>
+          <span id="resultInfo">Hue — all pixels</span>
+        </div>
+        <div class="canvas-frame">
+          <canvas id="resultCanvas" width="900" height="560"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Processing stays in the browser. Spatial modes use perceptual color clustering and deterministic layouts; collective modes add restrained real-time motion derived from colony routing, flock alignment, waggle communication, and comb construction. URL loading requires the remote server to allow cross-origin access; when it does not, download the image and use the local file control instead.
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const fileInput = document.getElementById("fileInput");
+      const urlInput = document.getElementById("urlInput");
+      const loadUrlButton = document.getElementById("loadUrlButton");
+      const modeSelect = document.getElementById("modeSelect");
+      const resolutionSelect = document.getElementById("resolutionSelect");
+      const downloadButton = document.getElementById("downloadButton");
+      const dropZone = document.getElementById("dropZone");
+      const status = document.getElementById("status");
+      const dimensions = document.getElementById("dimensions");
+      const originalInfo = document.getElementById("originalInfo");
+      const resultInfo = document.getElementById("resultInfo");
+      const sourceCanvas = document.getElementById("sourceCanvas");
+      const resultCanvas = document.getElementById("resultCanvas");
+      const canvasFrames = Array.from(document.querySelectorAll(".canvas-frame"));
+      const sourcePanel = sourceCanvas.closest(".panel");
+      const sourceFrame = sourceCanvas.closest(".canvas-frame");
+      const sourceContext = sourceCanvas.getContext("2d", { willReadFrequently: true });
+      const resultContext = resultCanvas.getContext("2d");
+
+      let sourceImage = null;
+      let sourceName = "";
+      let activeWorker = null;
+      let workerUrl = null;
+      let renderToken = 0;
+      let currentObjectUrl = null;
+      let animationFrameId = 0;
+      let animationState = null;
+      let canvasFitFrameId = 0;
+      const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+      const workerSource = String.raw`
+        "use strict";
+
+        const TAU = Math.PI * 2;
+        const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+        const BACKGROUND = 34;
+
+        const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+        const clampByte = value => Math.max(0, Math.min(255, Math.round(value)));
+
+        function hash32(value) {
+          value = Math.imul(value ^ (value >>> 16), 0x45d9f3b);
+          value = Math.imul(value ^ (value >>> 16), 0x45d9f3b);
+          return (value ^ (value >>> 16)) >>> 0;
+        }
+
+        function random01(seed) {
+          return hash32(seed) / 4294967296;
+        }
+
+        function hueKey(r, g, b, a) {
+          if (a === 0) return 360;
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const delta = max - min;
+          if (delta === 0) return 360;
+
+          let hue;
+          if (max === r) hue = ((g - b) / delta) % 6;
+          else if (max === g) hue = (b - r) / delta + 2;
+          else hue = (r - g) / delta + 4;
+
+          hue *= 60;
+          if (hue < 0) hue += 360;
+          return Math.min(359, Math.floor(hue));
+        }
+
+        function saturationKey(r, g, b, a) {
+          if (a === 0) return 256;
+          const max = Math.max(r, g, b) / 255;
+          const min = Math.min(r, g, b) / 255;
+          const delta = max - min;
+          const lightness = (max + min) / 2;
+          if (delta === 0) return 0;
+          const saturation = delta / (1 - Math.abs(2 * lightness - 1));
+          return clampByte(saturation * 255);
+        }
+
+        function lightnessKey(r, g, b, a) {
+          if (a === 0) return 256;
+          return Math.round((Math.max(r, g, b) + Math.min(r, g, b)) / 2);
+        }
+
+        function luminanceKey(r, g, b, a) {
+          if (a === 0) return 256;
+          return clampByte(0.2126 * r + 0.7152 * g + 0.0722 * b);
+        }
+
+        function rgbGroupKey(r, g, b, a) {
+          if (a === 0) return 4096;
+          return ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+        }
+
+        function getMode(mode) {
+          if (mode.startsWith("hue-")) return { key: hueKey, bins: 361 };
+          if (mode === "saturation-global") return { key: saturationKey, bins: 257 };
+          if (mode === "lightness-global") return { key: lightnessKey, bins: 257 };
+          if (mode === "luminance-global") return { key: luminanceKey, bins: 257 };
+          if (mode === "rgb-global") return { key: rgbGroupKey, bins: 4097 };
+          return null;
+        }
+
+        function copyPixel(source, sourcePixel, target, targetPixel) {
+          const sourceOffset = sourcePixel * 4;
+          const targetOffset = targetPixel * 4;
+          target[targetOffset] = source[sourceOffset];
+          target[targetOffset + 1] = source[sourceOffset + 1];
+          target[targetOffset + 2] = source[sourceOffset + 2];
+          target[targetOffset + 3] = source[sourceOffset + 3];
+        }
+
+        function stableCountingSortGlobal(source, keyFunction, bins) {
+          const pixelCount = source.length / 4;
+          const keys = bins <= 65535 ? new Uint16Array(pixelCount) : new Uint32Array(pixelCount);
+          const counts = new Uint32Array(bins);
+          const offsets = new Uint32Array(bins);
+          const output = new Uint8ClampedArray(source.length);
+
+          for (let pixel = 0; pixel < pixelCount; pixel++) {
+            const offset = pixel * 4;
+            const key = keyFunction(source[offset], source[offset + 1], source[offset + 2], source[offset + 3]);
+            keys[pixel] = key;
+            counts[key]++;
+          }
+
+          let runningTotal = 0;
+          for (let key = 0; key < bins; key++) {
+            offsets[key] = runningTotal;
+            runningTotal += counts[key];
+          }
+
+          for (let pixel = 0; pixel < pixelCount; pixel++) {
+            const targetPixel = offsets[keys[pixel]]++;
+            copyPixel(source, pixel, output, targetPixel);
+          }
+
+          return output;
+        }
+
+        function stableCountingSortRows(source, width, height, keyFunction, bins) {
+          const output = new Uint8ClampedArray(source.length);
+          const counts = new Uint32Array(bins);
+          const offsets = new Uint32Array(bins);
+          const keys = bins <= 65535 ? new Uint16Array(width) : new Uint32Array(width);
+
+          for (let y = 0; y < height; y++) {
+            counts.fill(0);
+            const rowStart = y * width;
+
+            for (let x = 0; x < width; x++) {
+              const pixel = rowStart + x;
+              const offset = pixel * 4;
+              const key = keyFunction(source[offset], source[offset + 1], source[offset + 2], source[offset + 3]);
+              keys[x] = key;
+              counts[key]++;
+            }
+
+            let runningTotal = 0;
+            for (let key = 0; key < bins; key++) {
+              offsets[key] = runningTotal;
+              runningTotal += counts[key];
+            }
+
+            for (let x = 0; x < width; x++) {
+              const targetX = offsets[keys[x]]++;
+              copyPixel(source, rowStart + x, output, rowStart + targetX);
+            }
+          }
+
+          return output;
+        }
+
+        function stableCountingSortColumns(source, width, height, keyFunction, bins) {
+          const output = new Uint8ClampedArray(source.length);
+          const counts = new Uint32Array(bins);
+          const offsets = new Uint32Array(bins);
+          const keys = bins <= 65535 ? new Uint16Array(height) : new Uint32Array(height);
+
+          for (let x = 0; x < width; x++) {
+            counts.fill(0);
+
+            for (let y = 0; y < height; y++) {
+              const pixel = y * width + x;
+              const offset = pixel * 4;
+              const key = keyFunction(source[offset], source[offset + 1], source[offset + 2], source[offset + 3]);
+              keys[y] = key;
+              counts[key]++;
+            }
+
+            let runningTotal = 0;
+            for (let key = 0; key < bins; key++) {
+              offsets[key] = runningTotal;
+              runningTotal += counts[key];
+            }
+
+            for (let y = 0; y < height; y++) {
+              const targetY = offsets[keys[y]]++;
+              copyPixel(source, y * width + x, output, targetY * width + x);
+            }
+          }
+
+          return output;
+        }
+
+        function shufflePixels(source) {
+          const output = new Uint8ClampedArray(source);
+          const pixelCount = output.length / 4;
+
+          for (let pixel = pixelCount - 1; pixel > 0; pixel--) {
+            const other = Math.floor(Math.random() * (pixel + 1));
+            const a = pixel * 4;
+            const b = other * 4;
+
+            for (let channel = 0; channel < 4; channel++) {
+              const temp = output[a + channel];
+              output[a + channel] = output[b + channel];
+              output[b + channel] = temp;
+            }
+          }
+
+          return output;
+        }
+
+        function makeBackground(width, height) {
+          const output = new Uint8ClampedArray(width * height * 4);
+          for (let offset = 0; offset < output.length; offset += 4) {
+            output[offset] = BACKGROUND;
+            output[offset + 1] = BACKGROUND;
+            output[offset + 2] = BACKGROUND;
+            output[offset + 3] = 255;
+          }
+          return output;
+        }
+
+        function renderChromaticCircle(source, width, height) {
+          const output = makeBackground(width, height);
+          const hits = new Uint16Array(width * height);
+          const centerX = (width - 1) / 2;
+          const centerY = (height - 1) / 2;
+          const radius = Math.max(1, Math.min(width, height) * 0.465);
+          const jitterDistance = Math.max(0.75, radius * 0.013);
+          const pixelCount = source.length / 4;
+
+          for (let pixel = 0; pixel < pixelCount; pixel++) {
+            const offset = pixel * 4;
+            const alpha = source[offset + 3];
+            if (alpha === 0) continue;
+
+            const r = source[offset];
+            const g = source[offset + 1];
+            const b = source[offset + 2];
+            const maximum = Math.max(r, g, b);
+            const minimum = Math.min(r, g, b);
+            const delta = maximum - minimum;
+            const saturation = maximum === 0 ? 0 : delta / maximum;
+            let hue = 0;
+
+            if (delta !== 0) {
+              if (maximum === r) hue = ((g - b) / delta) % 6;
+              else if (maximum === g) hue = (b - r) / delta + 2;
+              else hue = (r - g) / delta + 4;
+              hue /= 6;
+              if (hue < 0) hue += 1;
+            }
+
+            const seedA = hash32(pixel ^ 0x9e3779b9);
+            const seedB = hash32(pixel ^ 0x85ebca6b);
+            const angleJitter = (seedA / 4294967296 - 0.5) * 0.035;
+            const radialJitter = (seedB / 4294967296 - 0.5) * jitterDistance * 2;
+            const angle = hue * TAU + angleJitter;
+            const radialDistance = clamp(saturation * radius + radialJitter, 0, radius);
+            const x = Math.round(centerX + Math.cos(angle) * radialDistance);
+            const y = Math.round(centerY + Math.sin(angle) * radialDistance);
+
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+            const targetPixel = y * width + x;
+            const targetOffset = targetPixel * 4;
+            const alphaRatio = alpha / 255;
+            const displayR = BACKGROUND + (r - BACKGROUND) * alphaRatio;
+            const displayG = BACKGROUND + (g - BACKGROUND) * alphaRatio;
+            const displayB = BACKGROUND + (b - BACKGROUND) * alphaRatio;
+            const previousHits = hits[targetPixel];
+
+            if (previousHits === 0) {
+              output[targetOffset] = clampByte(displayR);
+              output[targetOffset + 1] = clampByte(displayG);
+              output[targetOffset + 2] = clampByte(displayB);
+              hits[targetPixel] = 1;
+            } else {
+              const nextHits = Math.min(65535, previousHits + 1);
+              const mix = 1 / nextHits;
+              output[targetOffset] = clampByte(output[targetOffset] + (displayR - output[targetOffset]) * mix);
+              output[targetOffset + 1] = clampByte(output[targetOffset + 1] + (displayG - output[targetOffset + 1]) * mix);
+              output[targetOffset + 2] = clampByte(output[targetOffset + 2] + (displayB - output[targetOffset + 2]) * mix);
+              hits[targetPixel] = nextHits;
+            }
+          }
+
+          return output;
+        }
+
+        function srgbToLinear(value) {
+          value /= 255;
+          return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+        }
+
+        function rgbToOklab(r, g, b) {
+          const linearR = srgbToLinear(r);
+          const linearG = srgbToLinear(g);
+          const linearB = srgbToLinear(b);
+          const l = 0.4122214708 * linearR + 0.5363325363 * linearG + 0.0514459929 * linearB;
+          const m = 0.2119034982 * linearR + 0.6806995451 * linearG + 0.1073969566 * linearB;
+          const s = 0.0883024619 * linearR + 0.2817188376 * linearG + 0.6299787005 * linearB;
+          const cubeL = Math.cbrt(l);
+          const cubeM = Math.cbrt(m);
+          const cubeS = Math.cbrt(s);
+          return [
+            0.2104542553 * cubeL + 0.793617785 * cubeM - 0.0040720468 * cubeS,
+            1.9779984951 * cubeL - 2.428592205 * cubeM + 0.4505937099 * cubeS,
+            0.0259040371 * cubeL + 0.7827717662 * cubeM - 0.808675766 * cubeS
+          ];
+        }
+
+        function rgbToHsv(r, g, b) {
+          const maximum = Math.max(r, g, b);
+          const minimum = Math.min(r, g, b);
+          const delta = maximum - minimum;
+          let hue = 0;
+
+          if (delta !== 0) {
+            if (maximum === r) hue = ((g - b) / delta) % 6;
+            else if (maximum === g) hue = (b - r) / delta + 2;
+            else hue = (r - g) / delta + 4;
+            hue /= 6;
+            if (hue < 0) hue += 1;
+          }
+
+          return [hue, maximum === 0 ? 0 : delta / maximum, maximum / 255];
+        }
+
+        function buildColorHistogram(source) {
+          const binCount = 32768;
+          const weights = new Float64Array(binCount);
+          const sumR = new Float64Array(binCount);
+          const sumG = new Float64Array(binCount);
+          const sumB = new Float64Array(binCount);
+          let totalWeight = 0;
+
+          for (let offset = 0; offset < source.length; offset += 4) {
+            const alpha = source[offset + 3] / 255;
+            if (alpha === 0) continue;
+            const r = source[offset];
+            const g = source[offset + 1];
+            const b = source[offset + 2];
+            const key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+            weights[key] += alpha;
+            sumR[key] += r * alpha;
+            sumG[key] += g * alpha;
+            sumB[key] += b * alpha;
+            totalWeight += alpha;
+          }
+
+          const bins = [];
+          for (let key = 0; key < binCount; key++) {
+            const weight = weights[key];
+            if (weight === 0) continue;
+            const r = sumR[key] / weight;
+            const g = sumG[key] / weight;
+            const b = sumB[key] / weight;
+            const lab = rgbToOklab(r, g, b);
+            const hsv = rgbToHsv(r, g, b);
+            bins.push({
+              r,
+              g,
+              b,
+              weight,
+              L: lab[0],
+              A: lab[1],
+              B: lab[2],
+              h: hsv[0],
+              s: hsv[1],
+              v: hsv[2],
+              tone: lab[0] + lab[1] * 0.32 - lab[2] * 0.18
+            });
+          }
+
+          return { bins, totalWeight };
+        }
+
+        function perceptualDistance(bin, centroid) {
+          const dL = bin.L - centroid.L;
+          const dA = bin.A - centroid.A;
+          const dB = bin.B - centroid.B;
+          return dL * dL + dA * dA + dB * dB;
+        }
+
+        function chooseClusterCount(binCount, mode) {
+          if (binCount <= 1) return binCount;
+          const logarithm = Math.log2(binCount + 1);
+          if (mode === "tone-bubbles") return Math.min(binCount, clamp(Math.round(8 + logarithm), 10, 22));
+          return Math.min(binCount, clamp(Math.round(5 + logarithm * 0.75), 7, 14));
+        }
+
+        function clusterHistogram(source, requestedClusters, preparedHistogram) {
+          const histogram = preparedHistogram || buildColorHistogram(source);
+          const bins = histogram.bins;
+          const totalWeight = histogram.totalWeight;
+          const clusterCount = Math.min(requestedClusters, bins.length);
+
+          if (clusterCount === 0) return { bins, clusters: [], totalWeight: 0 };
+
+          const centroids = [];
+          const selected = new Uint8Array(bins.length);
+          let firstIndex = 0;
+          for (let index = 1; index < bins.length; index++) {
+            if (bins[index].weight > bins[firstIndex].weight) firstIndex = index;
+          }
+          selected[firstIndex] = 1;
+          centroids.push({ L: bins[firstIndex].L, A: bins[firstIndex].A, B: bins[firstIndex].B });
+
+          while (centroids.length < clusterCount) {
+            let bestIndex = -1;
+            let bestScore = -1;
+
+            for (let index = 0; index < bins.length; index++) {
+              if (selected[index]) continue;
+              let nearestDistance = Infinity;
+              for (const centroid of centroids) {
+                nearestDistance = Math.min(nearestDistance, perceptualDistance(bins[index], centroid));
+              }
+              const score = nearestDistance * Math.sqrt(bins[index].weight);
+              if (score > bestScore) {
+                bestScore = score;
+                bestIndex = index;
+              }
+            }
+
+            if (bestIndex < 0) break;
+            selected[bestIndex] = 1;
+            centroids.push({ L: bins[bestIndex].L, A: bins[bestIndex].A, B: bins[bestIndex].B });
+          }
+
+          const assignments = new Uint16Array(bins.length);
+          for (let iteration = 0; iteration < 12; iteration++) {
+            const weightSums = new Float64Array(centroids.length);
+            const sumL = new Float64Array(centroids.length);
+            const sumA = new Float64Array(centroids.length);
+            const sumB = new Float64Array(centroids.length);
+
+            for (let index = 0; index < bins.length; index++) {
+              let nearestCluster = 0;
+              let nearestDistance = Infinity;
+              for (let cluster = 0; cluster < centroids.length; cluster++) {
+                const distance = perceptualDistance(bins[index], centroids[cluster]);
+                if (distance < nearestDistance) {
+                  nearestDistance = distance;
+                  nearestCluster = cluster;
+                }
+              }
+
+              assignments[index] = nearestCluster;
+              const weight = bins[index].weight;
+              weightSums[nearestCluster] += weight;
+              sumL[nearestCluster] += bins[index].L * weight;
+              sumA[nearestCluster] += bins[index].A * weight;
+              sumB[nearestCluster] += bins[index].B * weight;
+            }
+
+            let movement = 0;
+            for (let cluster = 0; cluster < centroids.length; cluster++) {
+              if (weightSums[cluster] === 0) continue;
+              const nextL = sumL[cluster] / weightSums[cluster];
+              const nextA = sumA[cluster] / weightSums[cluster];
+              const nextB = sumB[cluster] / weightSums[cluster];
+              const dL = nextL - centroids[cluster].L;
+              const dA = nextA - centroids[cluster].A;
+              const dB = nextB - centroids[cluster].B;
+              movement += dL * dL + dA * dA + dB * dB;
+              centroids[cluster] = { L: nextL, A: nextA, B: nextB };
+            }
+
+            if (movement < 1e-10) break;
+          }
+
+          const rawClusters = Array.from({ length: centroids.length }, () => ({
+            weight: 0,
+            r: 0,
+            g: 0,
+            b: 0,
+            L: 0,
+            A: 0,
+            B: 0,
+            binIndices: []
+          }));
+
+          for (let index = 0; index < bins.length; index++) {
+            let nearestCluster = 0;
+            let nearestDistance = Infinity;
+            for (let cluster = 0; cluster < centroids.length; cluster++) {
+              const distance = perceptualDistance(bins[index], centroids[cluster]);
+              if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestCluster = cluster;
+              }
+            }
+
+            const bin = bins[index];
+            const cluster = rawClusters[nearestCluster];
+            cluster.weight += bin.weight;
+            cluster.r += bin.r * bin.weight;
+            cluster.g += bin.g * bin.weight;
+            cluster.b += bin.b * bin.weight;
+            cluster.L += bin.L * bin.weight;
+            cluster.A += bin.A * bin.weight;
+            cluster.B += bin.B * bin.weight;
+            cluster.binIndices.push(index);
+          }
+
+          const clusters = rawClusters.filter(cluster => cluster.weight > 0);
+          for (const cluster of clusters) {
+            cluster.r /= cluster.weight;
+            cluster.g /= cluster.weight;
+            cluster.b /= cluster.weight;
+            cluster.L /= cluster.weight;
+            cluster.A /= cluster.weight;
+            cluster.B /= cluster.weight;
+            const hsv = rgbToHsv(cluster.r, cluster.g, cluster.b);
+            cluster.h = hsv[0];
+            cluster.s = hsv[1];
+            cluster.v = hsv[2];
+            cluster.binIndices.sort((left, right) => bins[left].tone - bins[right].tone);
+            const cdf = new Float64Array(cluster.binIndices.length);
+            let running = 0;
+            for (let index = 0; index < cluster.binIndices.length; index++) {
+              running += bins[cluster.binIndices[index]].weight;
+              cdf[index] = running;
+            }
+            cluster.cdf = cdf;
+          }
+
+          clusters.sort((left, right) => right.weight - left.weight);
+          return { bins, clusters, totalWeight };
+        }
+
+        function pickClusterBin(model, cluster, unitValue) {
+          const target = unitValue * cluster.weight;
+          let low = 0;
+          let high = cluster.cdf.length - 1;
+
+          while (low < high) {
+            const middle = (low + high) >> 1;
+            if (cluster.cdf[middle] < target) low = middle + 1;
+            else high = middle;
+          }
+
+          return model.bins[cluster.binIndices[low]];
+        }
+
+        function packClusters(model, width, height, options) {
+          const clusters = model.clusters;
+          const minimumDimension = Math.min(width, height);
+          const margin = Math.max(3, minimumDimension * options.marginRatio);
+          const padding = Math.max(options.minimumPadding, minimumDimension * options.paddingRatio);
+          const usableWidth = Math.max(1, width - margin * 2);
+          const usableHeight = Math.max(1, height - margin * 2);
+          const baseRadius = Math.sqrt((usableWidth * usableHeight * options.fillRatio) / Math.PI);
+          const minimumRadius = Math.max(2, minimumDimension * options.minimumRadiusRatio);
+          const maximumRadius = Math.max(minimumRadius, minimumDimension * options.maximumRadiusRatio);
+          const radii = clusters.map(cluster => clamp(
+            Math.sqrt(cluster.weight / model.totalWeight) * baseRadius,
+            minimumRadius,
+            maximumRadius
+          ));
+          const order = clusters.map((_, index) => index).sort((left, right) => radii[right] - radii[left]);
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const halfWidth = Math.max(1, width / 2 - margin);
+          const halfHeight = Math.max(1, height / 2 - margin);
+
+          function attempt(scale) {
+            const placed = [];
+            const byIndex = new Array(clusters.length);
+
+            for (let orderPosition = 0; orderPosition < order.length; orderPosition++) {
+              const clusterIndex = order[orderPosition];
+              const cluster = clusters[clusterIndex];
+              const radius = radii[clusterIndex] * scale;
+              const preferredAngle = cluster.h * TAU - Math.PI / 2;
+              const preferredReach = 0.2 + cluster.s * 0.45;
+              const preferredX = centerX + Math.cos(preferredAngle) * Math.max(0, halfWidth - radius) * preferredReach;
+              const preferredY = centerY + Math.sin(preferredAngle) * Math.max(0, halfHeight - radius) * preferredReach;
+              let bestCandidate = null;
+              let bestScore = Infinity;
+
+              function consider(x, y) {
+                if (x - radius < margin || x + radius > width - margin || y - radius < margin || y + radius > height - margin) return;
+
+                for (const other of placed) {
+                  const dx = x - other.x;
+                  const dy = y - other.y;
+                  const requiredDistance = radius + other.radius + padding;
+                  if (dx * dx + dy * dy < requiredDistance * requiredDistance - 1e-5) return;
+                }
+
+                const centerScore = Math.pow((x - centerX) / halfWidth, 2) + Math.pow((y - centerY) / halfHeight, 2);
+                const preferredScore = Math.pow((x - preferredX) / halfWidth, 2) + Math.pow((y - preferredY) / halfHeight, 2);
+                const score = centerScore * (1 - options.preferenceWeight) + preferredScore * options.preferenceWeight;
+                if (score < bestScore) {
+                  bestScore = score;
+                  bestCandidate = { x, y, radius, clusterIndex };
+                }
+              }
+
+              if (orderPosition === 0) {
+                consider(centerX, centerY);
+              } else {
+                consider(preferredX, preferredY);
+                consider(centerX, centerY);
+
+                for (const other of placed) {
+                  const tangentDistance = radius + other.radius + padding;
+                  for (let step = 0; step < 56; step++) {
+                    const angle = preferredAngle + step * TAU / 56;
+                    consider(
+                      other.x + Math.cos(angle) * tangentDistance,
+                      other.y + Math.sin(angle) * tangentDistance
+                    );
+                  }
+                }
+
+                const spiralSteps = 1800;
+                for (let step = 1; step <= spiralSteps; step++) {
+                  const progress = Math.sqrt(step / spiralSteps);
+                  const angle = preferredAngle + step * GOLDEN_ANGLE;
+                  consider(
+                    centerX + Math.cos(angle) * Math.max(0, halfWidth - radius) * progress,
+                    centerY + Math.sin(angle) * Math.max(0, halfHeight - radius) * progress
+                  );
+                }
+              }
+
+              if (!bestCandidate) return null;
+              placed.push(bestCandidate);
+              byIndex[clusterIndex] = bestCandidate;
+            }
+
+            return byIndex;
+          }
+
+          for (let attemptIndex = 0; attemptIndex < 38; attemptIndex++) {
+            const packed = attempt(Math.pow(0.94, attemptIndex));
+            if (packed) return packed;
+          }
+
+          return clusters.map((cluster, index) => ({
+            x: centerX,
+            y: centerY,
+            radius: Math.max(1, radii[index] * 0.1),
+            clusterIndex: index
+          }));
+        }
+
+        function renderClusterClouds(source, width, height) {
+          const histogram = buildColorHistogram(source);
+          const requestedClusters = chooseClusterCount(histogram.bins.length, "cluster-clouds");
+          const model = clusterHistogram(source, requestedClusters, histogram);
+          const output = makeBackground(width, height);
+          if (model.clusters.length === 0) return { output, clusterCount: 0 };
+
+          const circles = packClusters(model, width, height, {
+            fillRatio: 0.34,
+            marginRatio: 0.045,
+            paddingRatio: 0.024,
+            minimumPadding: 5,
+            minimumRadiusRatio: 0.012,
+            maximumRadiusRatio: 0.23,
+            preferenceWeight: 0.72
+          });
+
+          for (let clusterIndex = 0; clusterIndex < model.clusters.length; clusterIndex++) {
+            const cluster = model.clusters[clusterIndex];
+            const circle = circles[clusterIndex];
+            const radius = circle.radius;
+            const minimumX = Math.max(0, Math.floor(circle.x - radius));
+            const maximumX = Math.min(width - 1, Math.ceil(circle.x + radius));
+            const minimumY = Math.max(0, Math.floor(circle.y - radius));
+            const maximumY = Math.min(height - 1, Math.ceil(circle.y + radius));
+            const phaseA = random01(clusterIndex ^ 0x27d4eb2d) * TAU;
+            const phaseB = random01(clusterIndex ^ 0x165667b1) * TAU;
+
+            for (let y = minimumY; y <= maximumY; y++) {
+              for (let x = minimumX; x <= maximumX; x++) {
+                const normalizedX = (x + 0.5 - circle.x) / radius;
+                const normalizedY = (y + 0.5 - circle.y) / radius;
+                const distance = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
+                const angle = Math.atan2(normalizedY, normalizedX);
+                const edge = 0.86 + Math.sin(angle * 3 + phaseA) * 0.075 + Math.sin(angle * 7 + phaseB) * 0.045;
+                if (distance > edge) continue;
+
+                const relativeDistance = distance / edge;
+                const density = 0.18 + 0.81 * Math.pow(1 - relativeDistance, 0.42);
+                const pixelSeed = (y * width + x) ^ Math.imul(clusterIndex + 1, 0x9e3779b1);
+                if (random01(pixelSeed) > density) continue;
+
+                const spatialTone = clamp((normalizedX + 1) * 0.075 + (1 - normalizedY) * 0.055, 0, 0.26);
+                const selector = (random01(pixelSeed ^ 0x85ebca6b) * 0.87 + spatialTone) % 1;
+                const bin = pickClusterBin(model, cluster, selector);
+                const targetOffset = (y * width + x) * 4;
+                const boundaryCoverage = clamp((edge - distance) * radius, 0, 1);
+                output[targetOffset] = clampByte(BACKGROUND + (bin.r - BACKGROUND) * boundaryCoverage);
+                output[targetOffset + 1] = clampByte(BACKGROUND + (bin.g - BACKGROUND) * boundaryCoverage);
+                output[targetOffset + 2] = clampByte(BACKGROUND + (bin.b - BACKGROUND) * boundaryCoverage);
+              }
+            }
+          }
+
+          return { output, clusterCount: model.clusters.length };
+        }
+
+        function makeToneBubbles(source, width, height) {
+          const histogram = buildColorHistogram(source);
+          const requestedClusters = chooseClusterCount(histogram.bins.length, "tone-bubbles");
+          const model = clusterHistogram(source, requestedClusters, histogram);
+          if (model.clusters.length === 0) return { bubbles: [], clusterCount: 0 };
+
+          const circles = packClusters(model, width, height, {
+            fillRatio: 0.64,
+            marginRatio: 0.025,
+            paddingRatio: 0.004,
+            minimumPadding: 1.5,
+            minimumRadiusRatio: 0.009,
+            maximumRadiusRatio: 0.31,
+            preferenceWeight: 0.14
+          });
+
+          const bubbles = model.clusters.map((cluster, index) => ({
+            x: circles[index].x,
+            y: circles[index].y,
+            radius: circles[index].radius,
+            r: clampByte(cluster.r),
+            g: clampByte(cluster.g),
+            b: clampByte(cluster.b),
+            share: cluster.weight / model.totalWeight
+          }));
+
+          return { bubbles, clusterCount: bubbles.length };
+        }
+
+
+        function sceneColor(model, cluster, selector) {
+          if (!cluster || !cluster.binIndices.length) return [BACKGROUND, BACKGROUND, BACKGROUND];
+          const bin = pickClusterBin(model, cluster, clamp(selector, 0, 0.999999));
+          return [clampByte(bin.r), clampByte(bin.g), clampByte(bin.b)];
+        }
+
+        function averageColor(cluster) {
+          return [clampByte(cluster.r), clampByte(cluster.g), clampByte(cluster.b)];
+        }
+
+        function cubicPoint(path, t) {
+          const inverse = 1 - t;
+          const inverse2 = inverse * inverse;
+          const t2 = t * t;
+          return {
+            x: inverse2 * inverse * path.x0 + 3 * inverse2 * t * path.c1x + 3 * inverse * t2 * path.c2x + t2 * t * path.x1,
+            y: inverse2 * inverse * path.y0 + 3 * inverse2 * t * path.c1y + 3 * inverse * t2 * path.c2y + t2 * t * path.y1
+          };
+        }
+
+        function makeAntPheromoneScene(source, width, height) {
+          const histogram = buildColorHistogram(source);
+          const model = clusterHistogram(source, Math.min(11, Math.max(6, chooseClusterCount(histogram.bins.length, "cluster-clouds"))), histogram);
+          const minimumDimension = Math.min(width, height);
+          const centerX = width * 0.5;
+          const centerY = height * 0.52;
+          const nestRadius = clamp(minimumDimension * 0.052, 12, 54);
+          const trails = [];
+          const totalAgents = clamp(Math.round(Math.sqrt(width * height) * 1.55), 520, 1750);
+
+          for (let index = 0; index < model.clusters.length; index++) {
+            const cluster = model.clusters[index];
+            const share = cluster.weight / model.totalWeight;
+            const seed = Math.imul(index + 1, 0x9e3779b1);
+            const angle = cluster.h * TAU - Math.PI / 2 + (random01(seed) - 0.5) * 0.28;
+            const reach = 0.69 + cluster.s * 0.22 + random01(seed ^ 0x85ebca6b) * 0.08;
+            const nodeX = clamp(centerX + Math.cos(angle) * width * 0.43 * reach, minimumDimension * 0.055, width - minimumDimension * 0.055);
+            const nodeY = clamp(centerY + Math.sin(angle) * height * 0.39 * reach, minimumDimension * 0.055, height - minimumDimension * 0.055);
+            const dx = nodeX - centerX;
+            const dy = nodeY - centerY;
+            const distance = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+            const nx = -dy / distance;
+            const ny = dx / distance;
+            const bend = (random01(seed ^ 0xc2b2ae35) - 0.5) * minimumDimension * (0.18 + cluster.s * 0.13);
+            const path = {
+              x0: centerX,
+              y0: centerY,
+              c1x: centerX + dx * 0.28 + nx * bend,
+              c1y: centerY + dy * 0.28 + ny * bend,
+              c2x: centerX + dx * 0.69 - nx * bend * 0.46,
+              c2y: centerY + dy * 0.69 - ny * bend * 0.46,
+              x1: nodeX,
+              y1: nodeY
+            };
+            const average = averageColor(cluster);
+            const colors = [
+              average,
+              sceneColor(model, cluster, 0.2 + random01(seed ^ 0x27d4eb2d) * 0.18),
+              sceneColor(model, cluster, 0.68 + random01(seed ^ 0x165667b1) * 0.26)
+            ];
+            const groups = colors.map(color => ({ color, agents: [] }));
+            const agentCount = clamp(Math.round(totalAgents * share), 18, 290);
+            const trailWidth = clamp(minimumDimension * (0.0035 + Math.sqrt(share) * 0.012), 2, minimumDimension * 0.022);
+
+            for (let agentIndex = 0; agentIndex < agentCount; agentIndex++) {
+              const agentSeed = seed ^ Math.imul(agentIndex + 1, 0x45d9f3b);
+              const tone = Math.min(2, Math.floor(random01(agentSeed ^ 0x7f4a7c15) * 3));
+              groups[tone].agents.push({
+                phase: random01(agentSeed),
+                speed: 0.027 + random01(agentSeed ^ 0x68bc21eb) * 0.055,
+                direction: random01(agentSeed ^ 0x02e5be93) < 0.48 ? -1 : 1,
+                lane: (random01(agentSeed ^ 0x967a889b) - 0.5) * (trailWidth * 2.6 + minimumDimension * 0.008),
+                size: clamp(minimumDimension * (0.0016 + random01(agentSeed ^ 0x9e3779b9) * 0.0024), 1, 4.5)
+              });
+            }
+
+            const branches = [];
+            const branchCount = 1 + (index % 3);
+            for (let branchIndex = 0; branchIndex < branchCount; branchIndex++) {
+              const branchSeed = seed ^ Math.imul(branchIndex + 1, 0x7f4a7c15);
+              const t = 0.22 + random01(branchSeed) * 0.62;
+              const point = cubicPoint(path, t);
+              const branchAngle = angle + (random01(branchSeed ^ 0x85ebca6b) - 0.5) * 1.8;
+              const branchLength = minimumDimension * (0.035 + random01(branchSeed ^ 0xc2b2ae35) * 0.075);
+              branches.push({
+                x0: point.x,
+                y0: point.y,
+                cx: point.x + Math.cos(branchAngle + 0.7) * branchLength * 0.45,
+                cy: point.y + Math.sin(branchAngle + 0.7) * branchLength * 0.45,
+                x1: clamp(point.x + Math.cos(branchAngle) * branchLength, 0, width),
+                y1: clamp(point.y + Math.sin(branchAngle) * branchLength, 0, height)
+              });
+            }
+
+            trails.push({
+              ...path,
+              nodeX,
+              nodeY,
+              nodeRadius: clamp(minimumDimension * (0.012 + Math.sqrt(share) * 0.062), 5, minimumDimension * 0.083),
+              width: trailWidth,
+              share,
+              color: average,
+              colors,
+              groups,
+              branches
+            });
+          }
+
+          return {
+            mode: "ant-pheromone",
+            nest: { x: centerX, y: centerY, radius: nestRadius },
+            trails,
+            agentCount: trails.reduce((sum, trail) => sum + trail.groups.reduce((inner, group) => inner + group.agents.length, 0), 0),
+            label: trails.length + " pheromone routes"
+          };
+        }
+
+        function makeNestEdge(chambers, leftIndex, rightIndex, width, height, seed) {
+          const left = chambers[leftIndex];
+          const right = chambers[rightIndex];
+          const dx = right.x - left.x;
+          const dy = right.y - left.y;
+          const distance = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+          const nx = -dy / distance;
+          const ny = dx / distance;
+          const bend = (random01(seed) - 0.5) * Math.min(width, height) * 0.075;
+          const color = [
+            clampByte((left.color[0] + right.color[0]) * 0.5),
+            clampByte((left.color[1] + right.color[1]) * 0.5),
+            clampByte((left.color[2] + right.color[2]) * 0.5)
+          ];
+          const groups = [
+            { color: left.colors[1], agents: [] },
+            { color: right.colors[2], agents: [] }
+          ];
+          const agentCount = clamp(Math.round(12 + (left.share + right.share) * 100), 12, 40);
+          const tunnelWidth = clamp(Math.min(width, height) * (0.007 + Math.sqrt(left.share + right.share) * 0.009), 3, Math.min(width, height) * 0.02);
+
+          for (let agentIndex = 0; agentIndex < agentCount; agentIndex++) {
+            const agentSeed = seed ^ Math.imul(agentIndex + 1, 0x27d4eb2d);
+            const group = groups[agentIndex & 1];
+            group.agents.push({
+              phase: random01(agentSeed),
+              speed: 0.035 + random01(agentSeed ^ 0x68bc21eb) * 0.055,
+              direction: random01(agentSeed ^ 0x9e3779b9) < 0.5 ? -1 : 1,
+              lane: (random01(agentSeed ^ 0x85ebca6b) - 0.5) * tunnelWidth * 0.42,
+              size: clamp(Math.min(width, height) * (0.0015 + random01(agentSeed ^ 0xc2b2ae35) * 0.0018), 1, 3.5)
+            });
+          }
+
+          return {
+            left: leftIndex,
+            right: rightIndex,
+            x0: left.x,
+            y0: left.y,
+            cx: (left.x + right.x) * 0.5 + nx * bend,
+            cy: (left.y + right.y) * 0.5 + ny * bend,
+            x1: right.x,
+            y1: right.y,
+            width: tunnelWidth,
+            color,
+            groups
+          };
+        }
+
+        function makeAntNestScene(source, width, height) {
+          const histogram = buildColorHistogram(source);
+          const requested = Math.min(15, Math.max(8, chooseClusterCount(histogram.bins.length, "tone-bubbles")));
+          const model = clusterHistogram(source, requested, histogram);
+          const minimumDimension = Math.min(width, height);
+          const packed = model.clusters.length ? packClusters(model, width, height, {
+            fillRatio: 0.44,
+            marginRatio: 0.055,
+            paddingRatio: 0.022,
+            minimumPadding: 4,
+            minimumRadiusRatio: 0.018,
+            maximumRadiusRatio: 0.19,
+            preferenceWeight: 0.24
+          }) : [];
+          const chambers = [];
+
+          for (let index = 0; index < model.clusters.length; index++) {
+            const cluster = model.clusters[index];
+            const circle = packed[index];
+            const seed = Math.imul(index + 1, 0x85ebca6b);
+            const share = cluster.weight / model.totalWeight;
+            const radius = circle.radius;
+            const rotation = (random01(seed) - 0.5) * 1.15;
+            const rx = radius * (0.78 + random01(seed ^ 0x27d4eb2d) * 0.16);
+            const ry = radius * (0.48 + random01(seed ^ 0xc2b2ae35) * 0.22);
+            const average = averageColor(cluster);
+            const colors = [
+              average,
+              sceneColor(model, cluster, 0.18 + random01(seed ^ 0x165667b1) * 0.22),
+              sceneColor(model, cluster, 0.62 + random01(seed ^ 0x7f4a7c15) * 0.34)
+            ];
+            const dotGroups = colors.map(color => ({ color, points: [] }));
+            const dotCount = clamp(Math.round(34 + share * 920), 34, 175);
+            const cosine = Math.cos(rotation);
+            const sine = Math.sin(rotation);
+
+            for (let dotIndex = 0; dotIndex < dotCount; dotIndex++) {
+              const dotSeed = seed ^ Math.imul(dotIndex + 1, 0x45d9f3b);
+              const angle = random01(dotSeed) * TAU;
+              const radial = Math.sqrt(random01(dotSeed ^ 0x68bc21eb)) * 0.78;
+              const localX = Math.cos(angle) * rx * radial;
+              const localY = Math.sin(angle) * ry * radial;
+              const tone = Math.min(2, Math.floor(random01(dotSeed ^ 0x9e3779b9) * 3));
+              dotGroups[tone].points.push({
+                x: circle.x + localX * cosine - localY * sine,
+                y: circle.y + localX * sine + localY * cosine,
+                size: clamp(minimumDimension * (0.0011 + random01(dotSeed ^ 0x967a889b) * 0.0017), 0.8, 3.2)
+              });
+            }
+
+            chambers.push({
+              x: circle.x,
+              y: circle.y,
+              rx,
+              ry,
+              rotation,
+              share,
+              color: average,
+              colors,
+              dotGroups
+            });
+          }
+
+          const edges = [];
+          if (chambers.length > 1) {
+            const connected = new Uint8Array(chambers.length);
+            connected[0] = 1;
+            const edgeKeys = new Set();
+
+            while (edges.length < chambers.length - 1) {
+              let bestLeft = -1;
+              let bestRight = -1;
+              let bestScore = Infinity;
+              for (let left = 0; left < chambers.length; left++) {
+                if (!connected[left]) continue;
+                for (let right = 0; right < chambers.length; right++) {
+                  if (connected[right]) continue;
+                  const dx = chambers[right].x - chambers[left].x;
+                  const dy = chambers[right].y - chambers[left].y;
+                  const score = dx * dx + dy * dy;
+                  if (score < bestScore) {
+                    bestScore = score;
+                    bestLeft = left;
+                    bestRight = right;
+                  }
+                }
+              }
+              if (bestRight < 0) break;
+              connected[bestRight] = 1;
+              const key = Math.min(bestLeft, bestRight) + ":" + Math.max(bestLeft, bestRight);
+              edgeKeys.add(key);
+              edges.push(makeNestEdge(chambers, bestLeft, bestRight, width, height, hash32(bestLeft * 131 + bestRight * 977)));
+            }
+
+            const extraCount = Math.max(1, Math.floor(chambers.length / 4));
+            for (let extra = 0; extra < extraCount; extra++) {
+              let bestLeft = -1;
+              let bestRight = -1;
+              let bestScore = Infinity;
+              for (let left = 0; left < chambers.length; left++) {
+                for (let right = left + 1; right < chambers.length; right++) {
+                  const key = left + ":" + right;
+                  if (edgeKeys.has(key)) continue;
+                  const dx = chambers[right].x - chambers[left].x;
+                  const dy = chambers[right].y - chambers[left].y;
+                  const score = dx * dx + dy * dy;
+                  if (score < bestScore) {
+                    bestScore = score;
+                    bestLeft = left;
+                    bestRight = right;
+                  }
+                }
+              }
+              if (bestLeft < 0) break;
+              const key = bestLeft + ":" + bestRight;
+              edgeKeys.add(key);
+              edges.push(makeNestEdge(chambers, bestLeft, bestRight, width, height, hash32(bestLeft * 313 + bestRight * 1597 + extra * 43)));
+            }
+          }
+
+          return {
+            mode: "ant-nest",
+            chambers,
+            edges,
+            agentCount: edges.reduce((sum, edge) => sum + edge.groups.reduce((inner, group) => inner + group.agents.length, 0), 0),
+            label: chambers.length + " chambers"
+          };
+        }
+
+        function makeSwarmScene(source, width, height) {
+          const histogram = buildColorHistogram(source);
+          const requested = Math.min(9, Math.max(5, chooseClusterCount(histogram.bins.length, "cluster-clouds")));
+          const model = clusterHistogram(source, requested, histogram);
+          const minimumDimension = Math.min(width, height);
+          const totalAgents = clamp(Math.round(Math.sqrt(width * height) * 1.9), 720, 2100);
+          const flocks = [];
+
+          for (let index = 0; index < model.clusters.length; index++) {
+            const cluster = model.clusters[index];
+            const share = cluster.weight / model.totalWeight;
+            const seed = Math.imul(index + 1, 0x7f4a7c15);
+            const angle = cluster.h * TAU - Math.PI / 2;
+            const baseReach = 0.08 + cluster.s * 0.12;
+            const baseX = width * 0.5 + Math.cos(angle) * width * baseReach;
+            const baseY = height * 0.5 + Math.sin(angle) * height * baseReach;
+            const colors = [
+              sceneColor(model, cluster, 0.2 + random01(seed ^ 0x27d4eb2d) * 0.18),
+              averageColor(cluster),
+              sceneColor(model, cluster, 0.72 + random01(seed ^ 0xc2b2ae35) * 0.24)
+            ];
+            const groups = colors.map(color => ({ color, agents: [] }));
+            const agentCount = clamp(Math.round(totalAgents * share), 42, 440);
+            const cloudRadius = minimumDimension * (0.045 + Math.sqrt(share) * 0.17);
+
+            for (let agentIndex = 0; agentIndex < agentCount; agentIndex++) {
+              const agentSeed = seed ^ Math.imul(agentIndex + 1, 0x45d9f3b);
+              const localAngle = random01(agentSeed) * TAU;
+              const radial = Math.pow(random01(agentSeed ^ 0x85ebca6b), 0.68) * cloudRadius;
+              const tone = Math.min(2, Math.floor(random01(agentSeed ^ 0x68bc21eb) * 3));
+              groups[tone].agents.push({
+                ox: Math.cos(localAngle) * radial * (0.8 + cluster.s * 0.45),
+                oy: Math.sin(localAngle) * radial * (0.46 + (1 - cluster.s) * 0.34),
+                phase: random01(agentSeed ^ 0x9e3779b9) * TAU,
+                orbit: 0.32 + random01(agentSeed ^ 0x967a889b) * 0.72,
+                wobble: minimumDimension * (0.003 + random01(agentSeed ^ 0x165667b1) * 0.012),
+                alpha: 0.46 + random01(agentSeed ^ 0x02e5be93) * 0.48
+              });
+            }
+
+            flocks.push({
+              x: baseX,
+              y: baseY,
+              ampX: width * (0.055 + random01(seed ^ 0x9e3779b9) * 0.075),
+              ampY: height * (0.05 + random01(seed ^ 0x68bc21eb) * 0.075),
+              phase: random01(seed ^ 0x85ebca6b) * TAU,
+              speed: 0.19 + random01(seed ^ 0xc2b2ae35) * 0.22,
+              rotation: angle + (random01(seed ^ 0x27d4eb2d) - 0.5) * 1.1,
+              curl: minimumDimension * (0.008 + random01(seed ^ 0x165667b1) * 0.018),
+              color: averageColor(cluster),
+              groups
+            });
+          }
+
+          return {
+            mode: "swarm-flow",
+            flocks,
+            lineWidth: clamp(minimumDimension * 0.0022, 1, 3.4),
+            agentCount: flocks.reduce((sum, flock) => sum + flock.groups.reduce((inner, group) => inner + group.agents.length, 0), 0),
+            label: flocks.length + " aligned flocks"
+          };
+        }
+
+        function makeBeeWaggleScene(source, width, height) {
+          const histogram = buildColorHistogram(source);
+          const requested = Math.min(10, Math.max(5, chooseClusterCount(histogram.bins.length, "cluster-clouds")));
+          const model = clusterHistogram(source, requested, histogram);
+          const minimumDimension = Math.min(width, height);
+          const centerX = width * 0.5;
+          const centerY = height * 0.5;
+          const totalAgents = clamp(Math.round(Math.sqrt(width * height) * 0.92), 360, 1050);
+          const dances = [];
+          const hiveColors = model.clusters.slice(0, 7).map(averageColor);
+
+          for (let index = 0; index < model.clusters.length; index++) {
+            const cluster = model.clusters[index];
+            const share = cluster.weight / model.totalWeight;
+            const seed = Math.imul(index + 1, 0x165667b1);
+            const angle = cluster.h * TAU - Math.PI / 2;
+            const length = minimumDimension * (0.16 + cluster.s * 0.22 + Math.sqrt(share) * 0.08);
+            const loopWidth = minimumDimension * (0.035 + (1 - cluster.v) * 0.04 + random01(seed) * 0.025);
+            const colors = [
+              sceneColor(model, cluster, 0.23 + random01(seed ^ 0x85ebca6b) * 0.2),
+              averageColor(cluster),
+              sceneColor(model, cluster, 0.72 + random01(seed ^ 0xc2b2ae35) * 0.22)
+            ];
+            const groups = colors.map(color => ({ color, agents: [] }));
+            const agentCount = clamp(Math.round(totalAgents * share), 24, 210);
+
+            for (let agentIndex = 0; agentIndex < agentCount; agentIndex++) {
+              const agentSeed = seed ^ Math.imul(agentIndex + 1, 0x45d9f3b);
+              const tone = Math.min(2, Math.floor(random01(agentSeed ^ 0x68bc21eb) * 3));
+              groups[tone].agents.push({
+                phase: random01(agentSeed) * TAU,
+                speed: 0.45 + random01(agentSeed ^ 0x9e3779b9) * 0.75,
+                offset: (random01(agentSeed ^ 0x967a889b) - 0.5) * minimumDimension * 0.009,
+                size: clamp(minimumDimension * (0.0017 + random01(agentSeed ^ 0x02e5be93) * 0.0022), 1, 4)
+              });
+            }
+
+            dances.push({
+              angle,
+              length,
+              loopWidth,
+              phase: random01(seed ^ 0x27d4eb2d) * TAU,
+              color: averageColor(cluster),
+              colors,
+              groups,
+              endpointX: centerX + Math.cos(angle) * length,
+              endpointY: centerY + Math.sin(angle) * length
+            });
+          }
+
+          return {
+            mode: "bee-waggle",
+            center: { x: centerX, y: centerY },
+            hiveRadius: clamp(minimumDimension * 0.035, 8, 34),
+            hiveColors,
+            dances,
+            agentCount: dances.reduce((sum, dance) => sum + dance.groups.reduce((inner, group) => inner + group.agents.length, 0), 0),
+            label: dances.length + " communicated directions"
+          };
+        }
+
+        function makeBeeCombScene(source, width, height) {
+          const histogram = buildColorHistogram(source);
+          const requested = Math.min(18, Math.max(9, chooseClusterCount(histogram.bins.length, "tone-bubbles")));
+          const model = clusterHistogram(source, requested, histogram);
+          const area = width * height;
+          const minimumDimension = Math.min(width, height);
+          const targetCells = clamp(Math.round(area / 610), 320, 1450);
+          let radius = Math.sqrt(area / (targetCells * 2.598076211)) * 0.9;
+          radius = clamp(radius, minimumDimension * 0.0075, minimumDimension * 0.035);
+          const horizontalStep = radius * 1.5;
+          const verticalStep = radius * Math.sqrt(3);
+          const margin = radius * 1.1;
+          const cells = [];
+          const cellMap = new Map();
+          let column = 0;
+
+          for (let x = margin; x <= width - margin; x += horizontalStep, column++) {
+            const yOffset = (column & 1) ? verticalStep * 0.5 : 0;
+            let row = 0;
+            for (let y = margin + yOffset; y <= height - margin; y += verticalStep, row++) {
+              const dx = x - width * 0.5;
+              const dy = y - height * 0.5;
+              const angle = (Math.atan2(dy, dx) / TAU + 1) % 1;
+              const distance = Math.sqrt(dx * dx + dy * dy) / Math.max(1, Math.sqrt(width * width + height * height) * 0.5);
+              const seed = hash32(column * 73856093 ^ row * 19349663);
+              const cell = {
+                x,
+                y,
+                column,
+                row,
+                key: (angle + distance * 0.17 + (random01(seed) - 0.5) * 0.075 + 1) % 1,
+                birth: clamp(distance * 0.78 + random01(seed ^ 0x85ebca6b) * 0.22, 0, 1),
+                color: [BACKGROUND, BACKGROUND, BACKGROUND]
+              };
+              cellMap.set(column + ":" + row, cells.length);
+              cells.push(cell);
+            }
+          }
+
+          const orderedCells = cells.map((_, index) => index).sort((left, right) => cells[left].key - cells[right].key);
+          const orderedClusters = model.clusters.map((cluster, index) => ({ cluster, index })).sort((left, right) => left.cluster.h - right.cluster.h);
+          let cursor = 0;
+
+          for (let orderedIndex = 0; orderedIndex < orderedClusters.length; orderedIndex++) {
+            const item = orderedClusters[orderedIndex];
+            const remainingClusters = orderedClusters.length - orderedIndex;
+            const remainingCells = cells.length - cursor;
+            const desired = orderedIndex === orderedClusters.length - 1
+              ? remainingCells
+              : clamp(Math.round(cells.length * item.cluster.weight / model.totalWeight), 1, Math.max(1, remainingCells - (remainingClusters - 1)));
+
+            for (let local = 0; local < desired && cursor < orderedCells.length; local++, cursor++) {
+              const cell = cells[orderedCells[cursor]];
+              const seed = hash32(cell.column * 83492791 ^ cell.row * 2971215073 ^ item.index * 97);
+              const selector = clamp(cell.birth * 0.58 + random01(seed) * 0.42, 0, 0.999999);
+              cell.color = sceneColor(model, item.cluster, selector);
+            }
+          }
+
+          while (cursor < orderedCells.length && orderedClusters.length) {
+            const cell = cells[orderedCells[cursor]];
+            const item = orderedClusters[cursor % orderedClusters.length];
+            cell.color = sceneColor(model, item.cluster, random01(hash32(cursor ^ 0x9e3779b9)));
+            cursor++;
+          }
+
+          const walkers = [];
+          const neighborOffsetsEven = [[0, -1], [0, 1], [-1, -1], [-1, 0], [1, -1], [1, 0]];
+          const neighborOffsetsOdd = [[0, -1], [0, 1], [-1, 0], [-1, 1], [1, 0], [1, 1]];
+          const walkerCount = clamp(Math.round(cells.length / 26), 18, 58);
+
+          for (let walkerIndex = 0; walkerIndex < walkerCount; walkerIndex++) {
+            const seed = hash32(Math.imul(walkerIndex + 1, 0x9e3779b1));
+            const startIndex = Math.floor(random01(seed) * cells.length);
+            const start = cells[startIndex];
+            const offsets = (start.column & 1) ? neighborOffsetsOdd : neighborOffsetsEven;
+            const offset = offsets[Math.floor(random01(seed ^ 0x85ebca6b) * offsets.length)];
+            const neighborIndex = cellMap.get((start.column + offset[0]) + ":" + (start.row + offset[1]));
+            if (neighborIndex === undefined) continue;
+            const end = cells[neighborIndex];
+            walkers.push({
+              x0: start.x,
+              y0: start.y,
+              x1: end.x,
+              y1: end.y,
+              phase: random01(seed ^ 0xc2b2ae35) * 2,
+              speed: 0.18 + random01(seed ^ 0x27d4eb2d) * 0.34,
+              size: clamp(radius * (0.13 + random01(seed ^ 0x165667b1) * 0.11), 1, 4),
+              color: start.color
+            });
+          }
+
+          for (const cell of cells) {
+            delete cell.column;
+            delete cell.row;
+            delete cell.key;
+          }
+
+          return {
+            mode: "bee-comb",
+            radius,
+            cells,
+            walkers,
+            agentCount: walkers.length,
+            label: cells.length + " constructed cells"
+          };
+        }
+
+        function makeBehaviorScene(source, width, height, mode) {
+          if (mode === "ant-pheromone") return makeAntPheromoneScene(source, width, height);
+          if (mode === "ant-nest") return makeAntNestScene(source, width, height);
+          if (mode === "swarm-flow") return makeSwarmScene(source, width, height);
+          if (mode === "bee-waggle") return makeBeeWaggleScene(source, width, height);
+          if (mode === "bee-comb") return makeBeeCombScene(source, width, height);
+          throw new Error("Unknown collective behavior mode.");
+        }
+
+        self.onmessage = event => {
+          const { buffer, width, height, mode, token } = event.data;
+          const source = new Uint8ClampedArray(buffer);
+
+          try {
+            if (mode === "ant-pheromone" || mode === "ant-nest" || mode === "swarm-flow" || mode === "bee-waggle" || mode === "bee-comb") {
+              const scene = makeBehaviorScene(source, width, height, mode);
+              self.postMessage({ kind: "behavior", scene, width, height, token });
+              return;
+            }
+
+            if (mode === "chromatic-circle") {
+              const output = renderChromaticCircle(source, width, height);
+              self.postMessage({ kind: "pixels", buffer: output.buffer, width, height, token }, [output.buffer]);
+              return;
+            }
+
+            if (mode === "cluster-clouds") {
+              const result = renderClusterClouds(source, width, height);
+              self.postMessage({
+                kind: "pixels",
+                buffer: result.output.buffer,
+                width,
+                height,
+                token,
+                clusterCount: result.clusterCount
+              }, [result.output.buffer]);
+              return;
+            }
+
+            if (mode === "tone-bubbles") {
+              const result = makeToneBubbles(source, width, height);
+              self.postMessage({
+                kind: "bubbles",
+                bubbles: result.bubbles,
+                width,
+                height,
+                token,
+                clusterCount: result.clusterCount
+              });
+              return;
+            }
+
+            let output;
+            if (mode === "shuffle") {
+              output = shufflePixels(source);
+            } else {
+              const definition = getMode(mode);
+              if (!definition) throw new Error("Unknown decomposition mode.");
+
+              if (mode === "hue-rows") {
+                output = stableCountingSortRows(source, width, height, definition.key, definition.bins);
+              } else if (mode === "hue-columns") {
+                output = stableCountingSortColumns(source, width, height, definition.key, definition.bins);
+              } else {
+                output = stableCountingSortGlobal(source, definition.key, definition.bins);
+              }
+            }
+
+            self.postMessage({ kind: "pixels", buffer: output.buffer, width, height, token }, [output.buffer]);
+          } catch (error) {
+            self.postMessage({
+              kind: "error",
+              message: error && error.message ? error.message : "Unknown processing error.",
+              token
+            });
+          }
+        };
+
+      `;
+
+      function setStatus(message, state = "idle") {
+        status.textContent = message;
+        status.dataset.state = state;
+      }
+
+      function fitCanvasesToViewport() {
+        const bitmapWidth = Math.max(1, sourceCanvas.width || 900);
+        const bitmapHeight = Math.max(1, sourceCanvas.height || 560);
+        const aspectRatio = bitmapWidth / bitmapHeight;
+        const panelWidth = Math.max(1, sourcePanel.clientWidth);
+        const frameTop = sourceFrame.getBoundingClientRect().top;
+        const availableHeight = Math.max(1, window.innerHeight - frameTop - 18);
+
+        let displayWidth = panelWidth;
+        let displayHeight = displayWidth / aspectRatio;
+
+        if (displayHeight > availableHeight) {
+          displayHeight = availableHeight;
+          displayWidth = displayHeight * aspectRatio;
+        }
+
+        displayWidth = Math.max(1, Math.floor(displayWidth));
+        displayHeight = Math.max(1, Math.floor(displayHeight));
+
+        for (const frame of canvasFrames) {
+          frame.style.width = `${displayWidth}px`;
+          frame.style.height = `${displayHeight}px`;
+        }
+      }
+
+      function scheduleCanvasFit() {
+        if (canvasFitFrameId) cancelAnimationFrame(canvasFitFrameId);
+        canvasFitFrameId = requestAnimationFrame(() => {
+          canvasFitFrameId = 0;
+          fitCanvasesToViewport();
+        });
+      }
+
+      function makeDownloadFilename() {
+        const withoutExtension = (sourceName || "pixel-decomposition").replace(/\.[^.]+$/, "");
+        const safeBase = withoutExtension
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9_-]+/gi, "-")
+          .replace(/^-+|-+$/g, "") || "pixel-decomposition";
+        return `${safeBase}-${modeSelect.value}.png`;
+      }
+
+      function downloadVisualization() {
+        if (!sourceImage || downloadButton.disabled) return;
+
+        const filename = makeDownloadFilename();
+        downloadButton.disabled = true;
+        resultCanvas.toBlob(blob => {
+          if (!blob) {
+            setStatus("Could not create the PNG file.", "error");
+            downloadButton.disabled = false;
+            return;
+          }
+
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = objectUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+          setStatus(`Downloaded ${filename}.`, "idle");
+          downloadButton.disabled = false;
+        }, "image/png");
+      }
+
+      function drawPlaceholder(canvas, context, label) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = "#222";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = "#8f8f8f";
+        context.font = "14px Arial, Helvetica, sans-serif";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(label, canvas.width / 2, canvas.height / 2);
+      }
+
+      function drawToneBubbles(circles, width, height) {
+        resultContext.clearRect(0, 0, width, height);
+        resultContext.fillStyle = "#222";
+        resultContext.fillRect(0, 0, width, height);
+        resultContext.imageSmoothingEnabled = true;
+
+        for (const circle of circles) {
+          resultContext.beginPath();
+          resultContext.arc(circle.x, circle.y, Math.max(0.5, circle.radius), 0, Math.PI * 2);
+          resultContext.fillStyle = `rgb(${circle.r} ${circle.g} ${circle.b})`;
+          resultContext.fill();
+        }
+      }
+
+
+      const TAU = Math.PI * 2;
+
+      function colorCss(color, alpha = 1) {
+        return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
+      }
+
+      function fraction(value) {
+        return value - Math.floor(value);
+      }
+
+      function cubicPosition(path, t) {
+        const inverse = 1 - t;
+        const inverse2 = inverse * inverse;
+        const t2 = t * t;
+        return {
+          x: inverse2 * inverse * path.x0 + 3 * inverse2 * t * path.c1x + 3 * inverse * t2 * path.c2x + t2 * t * path.x1,
+          y: inverse2 * inverse * path.y0 + 3 * inverse2 * t * path.c1y + 3 * inverse * t2 * path.c2y + t2 * t * path.y1
+        };
+      }
+
+      function cubicDirection(path, t) {
+        const inverse = 1 - t;
+        return {
+          x: 3 * inverse * inverse * (path.c1x - path.x0) + 6 * inverse * t * (path.c2x - path.c1x) + 3 * t * t * (path.x1 - path.c2x),
+          y: 3 * inverse * inverse * (path.c1y - path.y0) + 6 * inverse * t * (path.c2y - path.c1y) + 3 * t * t * (path.y1 - path.c2y)
+        };
+      }
+
+      function quadraticPosition(path, t) {
+        const inverse = 1 - t;
+        return {
+          x: inverse * inverse * path.x0 + 2 * inverse * t * path.cx + t * t * path.x1,
+          y: inverse * inverse * path.y0 + 2 * inverse * t * path.cy + t * t * path.y1
+        };
+      }
+
+      function quadraticDirection(path, t) {
+        return {
+          x: 2 * (1 - t) * (path.cx - path.x0) + 2 * t * (path.x1 - path.cx),
+          y: 2 * (1 - t) * (path.cy - path.y0) + 2 * t * (path.y1 - path.cy)
+        };
+      }
+
+      function traceHexagon(context, x, y, radius) {
+        context.beginPath();
+        for (let corner = 0; corner < 6; corner++) {
+          const angle = corner * TAU / 6;
+          const px = x + Math.cos(angle) * radius;
+          const py = y + Math.sin(angle) * radius;
+          if (corner === 0) context.moveTo(px, py);
+          else context.lineTo(px, py);
+        }
+        context.closePath();
+      }
+
+      function traceWagglePath(context, scene, dance) {
+        const cosine = Math.cos(dance.angle);
+        const sine = Math.sin(dance.angle);
+        context.beginPath();
+        for (let step = 0; step <= 120; step++) {
+          const phase = step / 120 * TAU;
+          const forward = Math.sin(phase) * dance.length;
+          const side = Math.sin(phase) * Math.cos(phase) * dance.loopWidth;
+          const x = scene.center.x + forward * cosine - side * sine;
+          const y = scene.center.y + forward * sine + side * cosine;
+          if (step === 0) context.moveTo(x, y);
+          else context.lineTo(x, y);
+        }
+      }
+
+      function stopBehaviorAnimation() {
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        animationFrameId = 0;
+        animationState = null;
+      }
+
+      function buildBehaviorBackground(scene, width, height) {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+        const minimumDimension = Math.min(width, height);
+        context.fillStyle = "#222";
+        context.fillRect(0, 0, width, height);
+        context.lineJoin = "miter";
+        context.lineCap = "butt";
+
+        if (scene.mode === "ant-pheromone") {
+          for (const trail of scene.trails) {
+            context.strokeStyle = colorCss(trail.color, 0.14);
+            context.lineWidth = Math.max(1, trail.width * 0.38);
+            for (const branch of trail.branches) {
+              context.beginPath();
+              context.moveTo(branch.x0, branch.y0);
+              context.quadraticCurveTo(branch.cx, branch.cy, branch.x1, branch.y1);
+              context.stroke();
+            }
+          }
+
+          for (const trail of scene.trails) {
+            context.strokeStyle = colorCss(trail.color, 0.24);
+            context.lineWidth = trail.width;
+            context.beginPath();
+            context.moveTo(trail.x0, trail.y0);
+            context.bezierCurveTo(trail.c1x, trail.c1y, trail.c2x, trail.c2y, trail.x1, trail.y1);
+            context.stroke();
+
+            context.fillStyle = colorCss(trail.color, 0.13);
+            context.beginPath();
+            context.arc(trail.nodeX, trail.nodeY, trail.nodeRadius, 0, TAU);
+            context.fill();
+            context.strokeStyle = colorCss(trail.color, 0.72);
+            context.lineWidth = Math.max(1, minimumDimension * 0.0016);
+            context.stroke();
+
+            context.fillStyle = colorCss(trail.color, 0.86);
+            const satelliteCount = 4 + Math.round(trail.share * 18);
+            for (let satellite = 0; satellite < satelliteCount; satellite++) {
+              const angle = satellite / satelliteCount * TAU + trail.share * 9;
+              const reach = trail.nodeRadius * (0.28 + (satellite % 3) * 0.2);
+              const size = Math.max(1, trail.nodeRadius * 0.055);
+              context.fillRect(
+                trail.nodeX + Math.cos(angle) * reach - size * 0.5,
+                trail.nodeY + Math.sin(angle) * reach - size * 0.5,
+                size,
+                size
+              );
+            }
+          }
+
+          context.strokeStyle = "rgba(238, 238, 238, 0.38)";
+          context.lineWidth = Math.max(1, minimumDimension * 0.002);
+          for (let ring = 1; ring <= 3; ring++) {
+            context.beginPath();
+            context.arc(scene.nest.x, scene.nest.y, scene.nest.radius * (0.42 + ring * 0.25), 0, TAU);
+            context.stroke();
+          }
+          context.fillStyle = "rgba(238, 238, 238, 0.18)";
+          context.beginPath();
+          context.arc(scene.nest.x, scene.nest.y, scene.nest.radius * 0.37, 0, TAU);
+          context.fill();
+        } else if (scene.mode === "ant-nest") {
+          for (const edge of scene.edges) {
+            context.strokeStyle = "rgba(205, 205, 205, 0.2)";
+            context.lineWidth = edge.width;
+            context.beginPath();
+            context.moveTo(edge.x0, edge.y0);
+            context.quadraticCurveTo(edge.cx, edge.cy, edge.x1, edge.y1);
+            context.stroke();
+
+            context.strokeStyle = "rgba(34, 34, 34, 0.94)";
+            context.lineWidth = edge.width * 0.58;
+            context.stroke();
+          }
+
+          for (const chamber of scene.chambers) {
+            context.save();
+            context.translate(chamber.x, chamber.y);
+            context.rotate(chamber.rotation);
+            context.fillStyle = colorCss(chamber.color, 0.12);
+            context.strokeStyle = colorCss(chamber.color, 0.72);
+            context.lineWidth = Math.max(1, minimumDimension * 0.0018);
+            context.beginPath();
+            context.ellipse(0, 0, chamber.rx, chamber.ry, 0, 0, TAU);
+            context.fill();
+            context.stroke();
+            context.restore();
+
+            for (const group of chamber.dotGroups) {
+              context.fillStyle = colorCss(group.color, 0.9);
+              for (const point of group.points) {
+                context.fillRect(point.x - point.size * 0.5, point.y - point.size * 0.5, point.size, point.size);
+              }
+            }
+          }
+        } else if (scene.mode === "swarm-flow") {
+          for (const flock of scene.flocks) {
+            context.strokeStyle = colorCss(flock.color, 0.08);
+            context.lineWidth = Math.max(1, scene.lineWidth * 0.7);
+            context.beginPath();
+            context.ellipse(flock.x, flock.y, flock.ampX * 0.82, flock.ampY * 0.68, flock.rotation, 0, TAU);
+            context.stroke();
+          }
+        } else if (scene.mode === "bee-waggle") {
+          for (const dance of scene.dances) {
+            context.strokeStyle = colorCss(dance.color, 0.22);
+            context.lineWidth = Math.max(1, minimumDimension * 0.0021);
+            traceWagglePath(context, scene, dance);
+            context.stroke();
+
+            context.strokeStyle = colorCss(dance.color, 0.58);
+            context.lineWidth = Math.max(1, minimumDimension * 0.0014);
+            context.beginPath();
+            context.arc(dance.endpointX, dance.endpointY, Math.max(3, minimumDimension * 0.008), 0, TAU);
+            context.stroke();
+          }
+
+          const hiveCenters = [{ x: scene.center.x, y: scene.center.y }];
+          for (let index = 0; index < 6; index++) {
+            const angle = index * TAU / 6;
+            hiveCenters.push({
+              x: scene.center.x + Math.cos(angle) * scene.hiveRadius * 1.55,
+              y: scene.center.y + Math.sin(angle) * scene.hiveRadius * 1.55
+            });
+          }
+          for (let index = 0; index < hiveCenters.length; index++) {
+            const color = scene.hiveColors[index % Math.max(1, scene.hiveColors.length)] || [210, 210, 210];
+            traceHexagon(context, hiveCenters[index].x, hiveCenters[index].y, scene.hiveRadius * 0.86);
+            context.fillStyle = colorCss(color, 0.16);
+            context.strokeStyle = colorCss(color, 0.64);
+            context.lineWidth = Math.max(1, minimumDimension * 0.0015);
+            context.fill();
+            context.stroke();
+          }
+        } else if (scene.mode === "bee-comb") {
+          for (const cell of scene.cells) {
+            traceHexagon(context, cell.x, cell.y, scene.radius * 0.94);
+            context.fillStyle = colorCss(cell.color, 0.83);
+            context.strokeStyle = "rgba(34, 34, 34, 0.72)";
+            context.lineWidth = Math.max(1, scene.radius * 0.09);
+            context.fill();
+            context.stroke();
+          }
+        }
+
+        return canvas;
+      }
+
+      function drawAntPheromoneFrame(context, state, seconds) {
+        const { scene, background } = state;
+        context.globalAlpha = 1;
+        context.drawImage(background, 0, 0);
+
+        for (const trail of scene.trails) {
+          for (const group of trail.groups) {
+            context.fillStyle = colorCss(group.color, 0.94);
+            for (const agent of group.agents) {
+              const t = fraction(agent.phase + seconds * agent.speed * agent.direction);
+              const position = cubicPosition(trail, t);
+              const direction = cubicDirection(trail, t);
+              const length = Math.max(0.0001, Math.sqrt(direction.x * direction.x + direction.y * direction.y));
+              const x = position.x - direction.y / length * agent.lane;
+              const y = position.y + direction.x / length * agent.lane;
+              context.fillRect(x - agent.size, y - agent.size * 0.55, agent.size * 2, agent.size * 1.1);
+            }
+          }
+        }
+
+        const pulse = 0.5 + Math.sin(seconds * 1.8) * 0.5;
+        context.strokeStyle = `rgba(238, 238, 238, ${0.12 + pulse * 0.22})`;
+        context.lineWidth = Math.max(1, scene.nest.radius * 0.06);
+        context.beginPath();
+        context.arc(scene.nest.x, scene.nest.y, scene.nest.radius * (0.55 + pulse * 0.34), 0, TAU);
+        context.stroke();
+      }
+
+      function drawAntNestFrame(context, state, seconds) {
+        const { scene, background } = state;
+        context.globalAlpha = 1;
+        context.drawImage(background, 0, 0);
+
+        for (const edge of scene.edges) {
+          for (const group of edge.groups) {
+            context.fillStyle = colorCss(group.color, 0.92);
+            for (const agent of group.agents) {
+              const t = fraction(agent.phase + seconds * agent.speed * agent.direction);
+              const position = quadraticPosition(edge, t);
+              const direction = quadraticDirection(edge, t);
+              const length = Math.max(0.0001, Math.sqrt(direction.x * direction.x + direction.y * direction.y));
+              const x = position.x - direction.y / length * agent.lane;
+              const y = position.y + direction.x / length * agent.lane;
+              context.fillRect(x - agent.size, y - agent.size * 0.5, agent.size * 2, agent.size);
+            }
+          }
+        }
+      }
+
+      function swarmPosition(flock, agent, seconds) {
+        const wave = seconds * flock.speed + flock.phase;
+        const centerX = flock.x + Math.sin(wave) * flock.ampX + Math.sin(wave * 0.43 + 1.7) * flock.ampX * 0.34;
+        const centerY = flock.y + Math.sin(wave * 1.31 + 0.8) * flock.ampY + Math.cos(wave * 0.37) * flock.ampY * 0.31;
+        const rotation = flock.rotation + Math.sin(wave * 0.52) * 0.68;
+        const orbit = seconds * agent.orbit + agent.phase;
+        const localX = agent.ox + Math.cos(orbit) * agent.wobble + Math.sin(wave + agent.phase) * flock.curl;
+        const localY = agent.oy + Math.sin(orbit * 1.27) * agent.wobble * 0.72 + Math.cos(wave * 0.8 + agent.phase) * flock.curl * 0.52;
+        const cosine = Math.cos(rotation);
+        const sine = Math.sin(rotation);
+        return {
+          x: centerX + localX * cosine - localY * sine,
+          y: centerY + localX * sine + localY * cosine
+        };
+      }
+
+      function drawSwarmFrame(context, state, seconds) {
+        const { scene, background } = state;
+        if (state.firstFrame || state.staticFrame) {
+          context.globalAlpha = 1;
+          context.drawImage(background, 0, 0);
+        } else {
+          context.fillStyle = "rgba(34, 34, 34, 0.19)";
+          context.fillRect(0, 0, state.width, state.height);
+          context.globalAlpha = 0.16;
+          context.drawImage(background, 0, 0);
+          context.globalAlpha = 1;
+        }
+
+        for (const flock of scene.flocks) {
+          for (const group of flock.groups) {
+            context.strokeStyle = colorCss(group.color, 0.82);
+            context.lineWidth = scene.lineWidth;
+            context.beginPath();
+            for (const agent of group.agents) {
+              const current = swarmPosition(flock, agent, seconds);
+              const previous = swarmPosition(flock, agent, seconds - 0.035);
+              const dx = current.x - previous.x;
+              const dy = current.y - previous.y;
+              context.moveTo(current.x - dx * 1.8, current.y - dy * 1.8);
+              context.lineTo(current.x + dx * 0.45, current.y + dy * 0.45);
+            }
+            context.stroke();
+          }
+        }
+      }
+
+      function drawBeeWaggleFrame(context, state, seconds) {
+        const { scene, background } = state;
+        context.globalAlpha = 1;
+        context.drawImage(background, 0, 0);
+
+        for (const dance of scene.dances) {
+          const cosine = Math.cos(dance.angle);
+          const sine = Math.sin(dance.angle);
+          for (const group of dance.groups) {
+            context.strokeStyle = colorCss(group.color, 0.94);
+            context.lineWidth = Math.max(1, group.agents.length ? group.agents[0].size : 1.5);
+            context.beginPath();
+            for (const agent of group.agents) {
+              const phase = agent.phase + seconds * agent.speed + dance.phase;
+              const forward = Math.sin(phase) * dance.length;
+              const side = Math.sin(phase) * Math.cos(phase) * dance.loopWidth + agent.offset;
+              const derivativeForward = Math.cos(phase) * dance.length;
+              const derivativeSide = Math.cos(phase * 2) * dance.loopWidth;
+              const x = scene.center.x + forward * cosine - side * sine;
+              const y = scene.center.y + forward * sine + side * cosine;
+              const dx = derivativeForward * cosine - derivativeSide * sine;
+              const dy = derivativeForward * sine + derivativeSide * cosine;
+              const length = Math.max(0.0001, Math.sqrt(dx * dx + dy * dy));
+              const extent = agent.size * 1.8;
+              context.moveTo(x - dx / length * extent, y - dy / length * extent);
+              context.lineTo(x + dx / length * extent, y + dy / length * extent);
+            }
+            context.stroke();
+          }
+        }
+
+        const pulse = 0.5 + Math.sin(seconds * 2.2) * 0.5;
+        traceHexagon(context, scene.center.x, scene.center.y, scene.hiveRadius * (0.66 + pulse * 0.18));
+        context.strokeStyle = `rgba(238, 238, 238, ${0.18 + pulse * 0.26})`;
+        context.lineWidth = Math.max(1, scene.hiveRadius * 0.08);
+        context.stroke();
+      }
+
+      function drawBeeCombFrame(context, state, seconds) {
+        const { scene, background } = state;
+        context.globalAlpha = 1;
+        context.drawImage(background, 0, 0);
+        const front = fraction(seconds * 0.075);
+
+        for (const cell of scene.cells) {
+          let distance = Math.abs(cell.birth - front);
+          distance = Math.min(distance, 1 - distance);
+          if (distance > 0.035) continue;
+          const intensity = 1 - distance / 0.035;
+          traceHexagon(context, cell.x, cell.y, scene.radius * (0.94 + intensity * 0.08));
+          context.strokeStyle = colorCss(cell.color, 0.36 + intensity * 0.56);
+          context.lineWidth = Math.max(1, scene.radius * (0.09 + intensity * 0.08));
+          context.stroke();
+        }
+
+        for (const walker of scene.walkers) {
+          const cycle = fraction(walker.phase + seconds * walker.speed) * 2;
+          const progress = cycle <= 1 ? cycle : 2 - cycle;
+          const x = walker.x0 + (walker.x1 - walker.x0) * progress;
+          const y = walker.y0 + (walker.y1 - walker.y0) * progress;
+          context.fillStyle = colorCss(walker.color, 0.96);
+          context.fillRect(x - walker.size, y - walker.size * 0.5, walker.size * 2, walker.size);
+        }
+      }
+
+      function startBehaviorAnimation(scene, width, height, token) {
+        stopBehaviorAnimation();
+        const background = buildBehaviorBackground(scene, width, height);
+        const staticFrame = reducedMotionQuery.matches;
+        const area = width * height;
+        const targetFps = area > 4000000 ? 14 : area > 2000000 ? 20 : 30;
+        const state = {
+          scene,
+          background,
+          width,
+          height,
+          token,
+          firstFrame: true,
+          staticFrame,
+          startedAt: performance.now(),
+          lastFrameAt: 0,
+          frameInterval: 1000 / targetFps
+        };
+        animationState = state;
+
+        const frame = timestamp => {
+          if (animationState !== state || token !== renderToken) return;
+          if (!state.firstFrame && timestamp - state.lastFrameAt < state.frameInterval) {
+            animationFrameId = requestAnimationFrame(frame);
+            return;
+          }
+
+          state.lastFrameAt = timestamp;
+          const seconds = staticFrame ? 2.35 : (timestamp - state.startedAt) / 1000;
+          resultContext.imageSmoothingEnabled = true;
+
+          if (scene.mode === "ant-pheromone") drawAntPheromoneFrame(resultContext, state, seconds);
+          else if (scene.mode === "ant-nest") drawAntNestFrame(resultContext, state, seconds);
+          else if (scene.mode === "swarm-flow") drawSwarmFrame(resultContext, state, seconds);
+          else if (scene.mode === "bee-waggle") drawBeeWaggleFrame(resultContext, state, seconds);
+          else if (scene.mode === "bee-comb") drawBeeCombFrame(resultContext, state, seconds);
+
+          state.firstFrame = false;
+          if (!staticFrame) animationFrameId = requestAnimationFrame(frame);
+          else animationFrameId = 0;
+        };
+
+        frame(performance.now());
+      }
+
+      function revokeCurrentObjectUrl() {
+        if (currentObjectUrl) {
+          URL.revokeObjectURL(currentObjectUrl);
+          currentObjectUrl = null;
+        }
+      }
+
+      function createWorker() {
+        if (!workerUrl) {
+          workerUrl = URL.createObjectURL(new Blob([workerSource], { type: "text/javascript" }));
+        }
+        return new Worker(workerUrl);
+      }
+
+      function stopWorker() {
+        if (activeWorker) {
+          activeWorker.terminate();
+          activeWorker = null;
+        }
+      }
+
+      function fitDimensions(width, height) {
+        const selection = resolutionSelect.value;
+        if (selection === "original") return { width, height, scaled: false };
+
+        const maxPixels = Number(selection);
+        const sourcePixels = width * height;
+        if (sourcePixels <= maxPixels) return { width, height, scaled: false };
+
+        const scale = Math.sqrt(maxPixels / sourcePixels);
+        return {
+          width: Math.max(1, Math.round(width * scale)),
+          height: Math.max(1, Math.round(height * scale)),
+          scaled: true
+        };
+      }
+
+      async function decodeBlob(blob, name) {
+        if (!blob || !blob.type.startsWith("image/")) {
+          throw new Error("The selected item is not a supported image file.");
+        }
+
+        revokeCurrentObjectUrl();
+        currentObjectUrl = URL.createObjectURL(blob);
+        const image = new Image();
+        image.decoding = "async";
+
+        await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = () => reject(new Error("The browser could not decode this image."));
+          image.src = currentObjectUrl;
+        });
+
+        sourceImage = image;
+        sourceName = name || "image";
+        await renderImage();
+      }
+
+      async function loadLocalFile(file) {
+        try {
+          setStatus("Loading local image…", "busy");
+          await decodeBlob(file, file.name);
+        } catch (error) {
+          setStatus(error.message || "Could not load the image.", "error");
+        }
+      }
+
+      async function loadRemoteUrl() {
+        const url = urlInput.value.trim();
+        if (!url) {
+          setStatus("Enter an image URL first.", "error");
+          urlInput.focus();
+          return;
+        }
+
+        try {
+          setStatus("Fetching image URL…", "busy");
+          loadUrlButton.disabled = true;
+          const response = await fetch(url, { mode: "cors", credentials: "omit" });
+          if (!response.ok) throw new Error(`The server returned ${response.status}.`);
+          const blob = await response.blob();
+          const name = new URL(url, window.location.href).pathname.split("/").pop() || "remote image";
+          await decodeBlob(blob, name);
+        } catch (error) {
+          setStatus("Could not load that URL. The host may block cross-origin image access.", "error");
+        } finally {
+          loadUrlButton.disabled = false;
+        }
+      }
+
+      async function renderImage() {
+        if (!sourceImage) return;
+
+        stopWorker();
+        stopBehaviorAnimation();
+        renderToken++;
+        downloadButton.disabled = true;
+        setStatus("Preparing image…", "busy");
+
+        const naturalWidth = sourceImage.naturalWidth || sourceImage.width;
+        const naturalHeight = sourceImage.naturalHeight || sourceImage.height;
+        const fitted = fitDimensions(naturalWidth, naturalHeight);
+
+        sourceCanvas.width = fitted.width;
+        sourceCanvas.height = fitted.height;
+        resultCanvas.width = fitted.width;
+        resultCanvas.height = fitted.height;
+        scheduleCanvasFit();
+
+        sourceContext.clearRect(0, 0, fitted.width, fitted.height);
+        sourceContext.drawImage(sourceImage, 0, 0, fitted.width, fitted.height);
+        resultContext.clearRect(0, 0, fitted.width, fitted.height);
+
+        const pixelCount = fitted.width * fitted.height;
+        dimensions.textContent = `${fitted.width.toLocaleString()} × ${fitted.height.toLocaleString()} · ${pixelCount.toLocaleString()} pixels`;
+        originalInfo.textContent = fitted.scaled
+          ? `${naturalWidth} × ${naturalHeight} source · scaled for processing`
+          : `${naturalWidth} × ${naturalHeight}`;
+
+        await processCurrentMode();
+      }
+
+      async function processCurrentMode() {
+        if (!sourceImage) return;
+
+        stopWorker();
+        stopBehaviorAnimation();
+        const token = ++renderToken;
+        const modeLabel = modeSelect.options[modeSelect.selectedIndex].textContent;
+        resultInfo.textContent = modeLabel;
+        downloadButton.disabled = true;
+        setStatus(`Processing ${modeLabel.toLowerCase()}…`, "busy");
+
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        try {
+          const width = sourceCanvas.width;
+          const height = sourceCanvas.height;
+          const imageData = sourceContext.getImageData(0, 0, width, height);
+          activeWorker = createWorker();
+
+          activeWorker.onmessage = event => {
+            if (event.data.token !== renderToken) return;
+
+            if (event.data.kind === "error") {
+              setStatus(`Processing failed: ${event.data.message}`, "error");
+              stopWorker();
+              return;
+            }
+
+            if (event.data.kind === "behavior") {
+              startBehaviorAnimation(event.data.scene, width, height, token);
+            } else if (event.data.kind === "bubbles") {
+              drawToneBubbles(event.data.bubbles, width, height);
+            } else {
+              const output = new Uint8ClampedArray(event.data.buffer);
+              resultContext.putImageData(new ImageData(output, width, height), 0, 0);
+            }
+
+            let detail = "";
+            if (event.data.kind === "behavior") {
+              const agentDetail = event.data.scene.agentCount ? ` · ${event.data.scene.agentCount.toLocaleString()} moving agents` : "";
+              detail = ` · ${event.data.scene.label}${agentDetail}`;
+            } else if (event.data.clusterCount) {
+              detail = ` · ${event.data.clusterCount} ${event.data.kind === "bubbles" ? "color tones" : "color clusters"}`;
+            }
+            setStatus(`${modeLabel} complete${detail}.`, "idle");
+            downloadButton.disabled = false;
+            activeWorker.terminate();
+            activeWorker = null;
+          };
+
+          activeWorker.onerror = error => {
+            if (token !== renderToken) return;
+            setStatus(`Processing failed: ${error.message || "unknown worker error"}`, "error");
+            stopWorker();
+          };
+
+          activeWorker.postMessage(
+            { buffer: imageData.data.buffer, width, height, mode: modeSelect.value, token },
+            [imageData.data.buffer]
+          );
+        } catch (error) {
+          setStatus(error.message || "Could not read the image pixels.", "error");
+          stopWorker();
+        }
+      }
+
+      function handleDroppedFiles(fileList) {
+        const file = Array.from(fileList || []).find(candidate => candidate.type.startsWith("image/"));
+        if (!file) {
+          setStatus("Drop a supported image file.", "error");
+          return;
+        }
+        fileInput.value = "";
+        loadLocalFile(file);
+      }
+
+      fileInput.addEventListener("change", event => {
+        const [file] = event.target.files;
+        if (file) loadLocalFile(file);
+      });
+
+      loadUrlButton.addEventListener("click", loadRemoteUrl);
+      urlInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") loadRemoteUrl();
+      });
+
+      modeSelect.addEventListener("change", processCurrentMode);
+      resolutionSelect.addEventListener("change", renderImage);
+      downloadButton.addEventListener("click", downloadVisualization);
+      window.addEventListener("resize", scheduleCanvasFit, { passive: true });
+
+      dropZone.addEventListener("click", () => fileInput.click());
+      dropZone.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          fileInput.click();
+        }
+      });
+
+      ["dragenter", "dragover"].forEach(type => {
+        window.addEventListener(type, event => {
+          event.preventDefault();
+          dropZone.classList.add("is-over");
+        });
+      });
+
+      ["dragleave", "drop"].forEach(type => {
+        window.addEventListener(type, event => {
+          event.preventDefault();
+          if (type === "drop") handleDroppedFiles(event.dataTransfer.files);
+          dropZone.classList.remove("is-over");
+        });
+      });
+
+      window.addEventListener("beforeunload", () => {
+        stopWorker();
+        stopBehaviorAnimation();
+        revokeCurrentObjectUrl();
+        if (workerUrl) URL.revokeObjectURL(workerUrl);
+      });
+
+      drawPlaceholder(sourceCanvas, sourceContext, "Original image");
+      drawPlaceholder(resultCanvas, resultContext, "Pixel visualization");
+      scheduleCanvasFit();
+    })();
+  </script>
+</body>
+</html>
