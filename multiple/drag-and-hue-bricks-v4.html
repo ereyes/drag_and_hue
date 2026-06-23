@@ -1,0 +1,4146 @@
+<!doctype html>
+<html lang="en" data-language="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drag and Hue</title>
+
+  <!-- Frameworks, icons, font, and ColorThief -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Warm UI palette: brown-orange accent family */
+      --page-bg: #eef0f3;
+      --panel-bg: rgba(255, 255, 255, 0.78);
+      --panel-solid: #ffffff;
+      --text: #1f2229;
+      --muted: #6e7480;
+      --border: #d7dbe3;
+      --accent: #A65F2B;
+      --accent-soft: rgba(166, 95, 43, 0.14);
+      --control-bg: rgba(255, 255, 255, 0.78);
+      --shadow: 0 22px 60px rgba(31, 34, 41, 0.12);
+      --thumb-shadow: 0 12px 28px rgba(31, 34, 41, 0.10);
+    }
+
+    body[data-theme="dark"] {
+      --page-bg: #17191f;
+      --panel-bg: rgba(35, 38, 47, 0.78);
+      --panel-solid: #23262f;
+      --text: #f4f1eb;
+      --muted: #bbb7c4;
+      --border: #3d4250;
+      --accent: #E4A76F;
+      --accent-soft: rgba(228, 167, 111, 0.16);
+      --control-bg: rgba(35, 38, 47, 0.82);
+      --shadow: 0 22px 60px rgba(0, 0, 0, 0.38);
+      --thumb-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, var(--accent-soft), transparent 34rem),
+        var(--page-bg);
+      color: var(--text);
+      font-family: "Lora", Georgia, serif;
+      transition: background-color 240ms ease, color 240ms ease;
+    }
+
+    button,
+    input,
+    select {
+      font-family: inherit;
+    }
+
+    .top-bar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 80;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem clamp(1rem, 3vw, 2rem);
+      pointer-events: none;
+    }
+
+    .top-brand {
+      min-width: 0;
+      color: var(--text);
+      pointer-events: none;
+    }
+
+    .top-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-bottom: 0.2rem;
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .top-title {
+      margin: 0;
+      color: var(--text);
+      font-size: clamp(1.45rem, 2.7vw, 2.35rem);
+      font-weight: 700;
+      letter-spacing: -0.055em;
+      line-height: 0.95;
+      white-space: nowrap;
+    }
+
+    .options {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      padding: 0.45rem;
+      border: 1px solid var(--border);
+      border-radius: 0;
+      background: var(--control-bg);
+      box-shadow: 0 10px 28px rgba(31, 34, 41, 0.08);
+      backdrop-filter: blur(14px);
+      pointer-events: auto;
+    }
+
+    .options .btn {
+      border-radius: 0;
+      color: var(--text);
+      border-color: var(--border);
+      background: transparent;
+    }
+
+    .options .btn:hover,
+    .options .btn:focus {
+      border-color: var(--accent);
+      color: var(--text);
+      background: var(--accent-soft);
+    }
+
+    .options .btn.active,
+    .options .btn.btn-secondary {
+      color: #fff;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    body[data-theme="dark"] .options .btn.active,
+    body[data-theme="dark"] .options .btn.btn-secondary {
+      color: #17191f;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      place-items: center;
+      gap: 2rem;
+      padding: 6rem clamp(1.1rem, 4vw, 4rem) 3rem;
+      transition: grid-template-columns 280ms ease, padding 280ms ease;
+    }
+
+    .intro-panel {
+      width: min(760px, 100%);
+      text-align: center;
+      transition:
+        width 280ms ease,
+        padding 280ms ease,
+        transform 280ms ease;
+    }
+
+    .brand-block {
+      margin-bottom: 1.5rem;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-bottom: 0.75rem;
+      color: var(--muted);
+      font-size: 0.83rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .intro-title {
+      margin: 0;
+      color: var(--text);
+      font-size: clamp(3.1rem, 11vw, 7.2rem);
+      font-weight: 700;
+      letter-spacing: -0.055em;
+      line-height: 0.92;
+    }
+
+    .intro-copy {
+      max-width: 640px;
+      margin: 1.25rem auto 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.24rem);
+      line-height: 1.75;
+    }
+
+    .mobile-about {
+      display: none;
+    }
+
+    .drop-zone {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 240px;
+      padding: 2rem;
+      border: 2px dashed var(--border);
+      border-radius: 2rem;
+      background: var(--panel-bg);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      outline: 0;
+      transition:
+        border-color 200ms ease,
+        background-color 200ms ease,
+        box-shadow 200ms ease,
+        transform 200ms ease;
+    }
+
+    .drop-zone:hover,
+    .drop-zone:focus-visible,
+    .drop-zone.is-dragging {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      transform: translateY(-2px);
+    }
+
+    .drop-content {
+      display: grid;
+      justify-items: center;
+      gap: 0.95rem;
+    }
+
+    .drop-icon {
+      display: grid;
+      place-items: center;
+      width: 4rem;
+      height: 4rem;
+      border-radius: 999px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      font-size: 1.7rem;
+    }
+
+    .drop-text {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: lowercase;
+    }
+
+    .select-button,
+    .menu-button,
+    .model-selector,
+    .model-control-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      border-radius: 0;
+      font-weight: 700;
+    }
+
+    .select-button {
+      border: 0;
+      padding: 0.78rem 1.15rem;
+      color: #fff;
+      background: var(--accent);
+      box-shadow: 0 12px 26px rgba(166, 95, 43, 0.24);
+      transition: transform 180ms ease, filter 180ms ease;
+    }
+
+    body[data-theme="dark"] .select-button {
+      color: #17191f;
+    }
+
+    .select-button:hover,
+    .select-button:focus {
+      transform: translateY(-1px);
+      filter: brightness(1.02);
+    }
+
+    .mobile-menu-toggle {
+      display: none;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 0;
+      padding: 0.75rem 0.9rem;
+      color: var(--text);
+      background: var(--panel-solid);
+      font-weight: 700;
+    }
+
+    .mobile-menu-toggle:hover,
+    .mobile-menu-toggle:focus {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      outline: 0;
+    }
+
+    .models-panel {
+      display: none;
+      margin-top: 1.4rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .models-heading {
+      margin: 1rem 0 0.7rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .model-item {
+      border: 1px solid var(--border);
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .model-header {
+      display: flex;
+      align-items: stretch;
+      width: 100%;
+    }
+
+    .model-selector {
+      flex: 1 1 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-width: 0;
+      width: auto;
+      padding: 0.85rem 0.9rem;
+      border: 0;
+      border-radius: 0;
+      color: var(--text);
+      background: transparent;
+      text-align: left;
+    }
+
+    .model-selector-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      min-width: 0;
+    }
+
+    .model-toggle {
+      flex: 0 0 3rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 3rem;
+      border: 0;
+      border-left: 1px solid var(--border);
+      border-radius: 0;
+      color: var(--text);
+      background: transparent;
+    }
+
+    .model-toggle i {
+      transition: transform 180ms ease;
+    }
+
+    .model-selector:hover,
+    .model-selector:focus,
+    .model-toggle:hover,
+    .model-toggle:focus {
+      background: var(--accent-soft);
+      outline: 0;
+    }
+
+    .model-item.is-selected .model-header {
+      background: var(--accent);
+    }
+
+    .model-item.is-selected .model-selector,
+    .model-item.is-selected .model-toggle {
+      color: #fff;
+      background: transparent;
+    }
+
+    .model-item.is-selected .model-toggle {
+      border-left-color: rgba(255, 255, 255, 0.3);
+    }
+
+    body[data-theme="dark"] .model-item.is-selected .model-selector,
+    body[data-theme="dark"] .model-item.is-selected .model-toggle {
+      color: #17191f;
+    }
+
+    body[data-theme="dark"] .model-item.is-selected .model-toggle {
+      border-left-color: rgba(23, 25, 31, 0.3);
+    }
+
+    .model-item.is-open .model-toggle i {
+      transform: rotate(180deg);
+    }
+
+    .model-options {
+      display: none;
+      padding: 0.9rem;
+      border-top: 1px solid var(--border);
+      background: var(--panel-bg);
+    }
+
+    .model-item.is-open .model-options {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .model-options label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .model-options .form-select {
+      border-radius: 0;
+      color: var(--text);
+      background-color: var(--panel-solid);
+      border-color: var(--border);
+    }
+
+    .model-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.55rem;
+    }
+
+    .model-control-button {
+      width: 100%;
+      border: 1px solid var(--border);
+      padding: 0.7rem 0.8rem;
+      color: var(--text);
+      background: var(--panel-solid);
+    }
+
+    .model-control-button:hover,
+    .model-control-button:focus {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .main-area {
+      display: none;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .section-card {
+      margin-bottom: 2rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      font-weight: 700;
+      letter-spacing: -0.035em;
+    }
+
+    .section-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      color: var(--muted);
+      font-size: 0.98rem;
+      white-space: nowrap;
+    }
+
+    .menu-button {
+      border: 1px solid var(--border);
+      padding: 0.55rem 0.75rem;
+      color: var(--text);
+      background: var(--panel-solid);
+    }
+
+    .menu-button:hover,
+    .menu-button:focus {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .album-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+      gap: clamp(0.75rem, 2vw, 1.1rem);
+      align-items: stretch;
+    }
+
+    .thumb-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 0;
+      background: var(--panel-solid);
+      box-shadow: var(--thumb-shadow);
+      isolation: isolate;
+    }
+
+    .thumb-card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: var(--panel-solid);
+      transition: transform 280ms ease, filter 280ms ease;
+    }
+
+    .thumb-card:hover img {
+      transform: scale(1.04);
+      filter: saturate(1.08);
+    }
+
+    .thumb-caption {
+      display: block;
+      overflow: hidden;
+      padding: 0.55rem 0.7rem 0.65rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .thumb-remove {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border: 0;
+      border-radius: 0;
+      color: var(--text);
+      background: var(--panel-bg);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .thumb-card:hover .thumb-remove,
+    .thumb-remove:focus-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .mosaic-view,
+    .bars-view,
+    .listmaker-view,
+    .plot-view,
+    .rings-view,
+    .bricks-view {
+      display: none;
+    }
+
+    body.model-mosaic .mosaic-view,
+    body.model-bars .bars-view,
+    body.model-listmaker .listmaker-view,
+    body.model-plot .plot-view,
+    body.model-rings .rings-view,
+    body.model-bricks .bricks-view {
+      display: block;
+    }
+
+    body.model-mosaic .album-view,
+    body.model-bars .album-view,
+    body.model-listmaker .album-view,
+    body.model-plot .album-view,
+    body.model-rings .album-view,
+    body.model-bricks .album-view {
+      display: none;
+    }
+
+    .dominant-mosaic-wrap,
+    .rings-wrap {
+      width: min(100%, 550px);
+    }
+
+    .dominant-bars-wrap,
+    .plot-wrap,
+    .bricks-wrap {
+      width: min(100%, 760px);
+    }
+
+    .dominant-mosaic-stage,
+    .rings-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      isolation: isolate;
+    }
+
+    .dominant-bars-stage,
+    .plot-stage,
+    .bricks-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      isolation: isolate;
+    }
+
+    .dominant-mosaic {
+      display: grid;
+      width: 100%;
+      height: 100%;
+      gap: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background:
+        linear-gradient(45deg, rgba(120,120,120,0.08) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(120,120,120,0.08) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(120,120,120,0.08) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(120,120,120,0.08) 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+
+    .dominant-bars {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      gap: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background:
+        linear-gradient(45deg, rgba(120,120,120,0.08) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(120,120,120,0.08) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(120,120,120,0.08) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(120,120,120,0.08) 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+
+    .plot-stage {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background:
+        linear-gradient(45deg, rgba(120,120,120,0.07) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(120,120,120,0.07) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(120,120,120,0.07) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(120,120,120,0.07) 75%);
+      background-color: var(--panel-bg);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+
+    .plot-field {
+      position: absolute;
+      inset: 1.15rem;
+    }
+
+    .plot-axis-y {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 1;
+      width: 3px;
+      background: linear-gradient(to top, #000000, #ffffff);
+    }
+
+    .plot-axis-x {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 1;
+      height: 3px;
+      background: linear-gradient(
+        to right,
+        hsl(0, 100%, 50%),
+        hsl(60, 100%, 50%),
+        hsl(120, 100%, 50%),
+        hsl(180, 100%, 50%),
+        hsl(240, 100%, 50%),
+        hsl(300, 100%, 50%),
+        hsl(360, 100%, 50%)
+      );
+    }
+
+    .plot-items {
+      position: absolute;
+      inset: 0 0 3px 3px;
+      z-index: 2;
+    }
+
+    .plot-point {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      border: 0;
+      padding: 0;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+      transform: translate(-50%, 50%);
+    }
+
+    .plot-visual {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      object-fit: cover;
+      box-shadow: 0 8px 22px rgba(31, 34, 41, 0.16);
+    }
+
+    body[data-theme="dark"] .plot-visual {
+      border-color: rgba(23, 25, 31, 0.72);
+    }
+
+    .plot-color-shape {
+      background: var(--panel-solid);
+    }
+
+    .plot-point:hover .plot-visual,
+    .plot-point:focus-visible .plot-visual,
+    .plot-point.is-selected .plot-visual {
+      outline: 3px solid rgba(255, 255, 255, 0.92);
+      outline-offset: 1px;
+    }
+
+    .plot-control-row {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .model-options input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .model-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .model-checkbox input {
+      accent-color: var(--accent);
+    }
+
+    .rings-stage {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background:
+        linear-gradient(45deg, rgba(120,120,120,0.08) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(120,120,120,0.08) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(120,120,120,0.08) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(120,120,120,0.08) 75%);
+      background-color: var(--panel-bg);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+
+    .rings-svg {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .ring-circle {
+      fill: none;
+      cursor: pointer;
+      pointer-events: stroke;
+      stroke-linecap: round;
+      transition: filter 180ms ease, opacity 180ms ease;
+    }
+
+    .ring-circle:hover,
+    .ring-circle:focus-visible,
+    .ring-circle.is-selected {
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.85));
+      opacity: 0.92;
+      outline: none;
+    }
+
+    .bricks-stage {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background:
+        linear-gradient(45deg, rgba(120,120,120,0.08) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(120,120,120,0.08) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(120,120,120,0.08) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(120,120,120,0.08) 75%);
+      background-color: var(--panel-bg);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+
+    .bricks-wall {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      align-content: start;
+      justify-content: start;
+      gap: var(--brick-gap, 2px);
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .brick-cell {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      padding: 0;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+      overflow: hidden;
+      outline-offset: -4px;
+    }
+
+    body[data-theme="dark"] .brick-cell {
+      border-color: rgba(23, 25, 31, 0.55);
+    }
+
+    .brick-part {
+      width: 100%;
+      flex: 0 0 auto;
+    }
+
+    .brick-cell:hover,
+    .brick-cell:focus-visible,
+    .brick-cell.is-selected {
+      outline: 3px solid rgba(255, 255, 255, 0.92);
+      z-index: 1;
+    }
+
+    .dominant-color-cell {
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      border: 0;
+      padding: 0;
+      appearance: none;
+      cursor: pointer;
+      outline-offset: -4px;
+    }
+
+    .dominant-bar-cell {
+      flex: 1 1 0;
+      width: auto;
+      height: 100%;
+      min-width: 0;
+      border: 0;
+      padding: 0;
+      appearance: none;
+      cursor: pointer;
+      outline-offset: -4px;
+    }
+
+    .dominant-color-cell:hover,
+    .dominant-color-cell:focus-visible,
+    .dominant-color-cell.is-selected,
+    .dominant-bar-cell:hover,
+    .dominant-bar-cell:focus-visible,
+    .dominant-bar-cell.is-selected {
+      outline: 3px solid rgba(255, 255, 255, 0.9);
+      z-index: 1;
+    }
+
+    .mosaic-preview {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 30;
+      display: none;
+      width: min(86%, 520px);
+      max-height: 86%;
+      overflow: auto;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      box-shadow: var(--shadow);
+      transform: translate(-50%, -50%);
+      backdrop-filter: blur(14px);
+    }
+
+    .mosaic-preview.is-visible {
+      display: grid;
+      grid-template-columns: minmax(120px, 210px) minmax(0, 1fr);
+      gap: 1rem;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .mosaic-preview img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: var(--panel-solid);
+    }
+
+    .mosaic-preview-label {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .mosaic-preview-title {
+      margin: 0;
+      overflow-wrap: anywhere;
+      font-size: 1.1rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .mosaic-preview-color {
+      margin: 0.55rem 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .listmaker-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      box-shadow: var(--thumb-shadow);
+    }
+
+    .listmaker-table {
+      width: 100%;
+      min-width: 1120px;
+      border-collapse: collapse;
+      color: var(--text);
+      font-size: 0.88rem;
+    }
+
+    .listmaker-table th,
+    .listmaker-table td {
+      border-bottom: 1px solid var(--border);
+      padding: 0.65rem 0.75rem;
+      vertical-align: middle;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .listmaker-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--panel-solid);
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .listmaker-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .listmaker-thumb {
+      display: block;
+      width: 56px;
+      height: 56px;
+      object-fit: cover;
+      background: var(--panel-solid);
+    }
+
+    .listmaker-swatch {
+      display: inline-block;
+      width: 44px;
+      height: 28px;
+      border: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .listmaker-filename {
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .empty-mosaic-message {
+      display: none;
+      margin-top: 0.7rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .mosaic-status {
+      margin-top: 0.7rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    body.has-images {
+      overflow: hidden;
+    }
+
+    body.has-images .app-shell {
+      height: 100vh;
+      min-height: 100vh;
+      grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+      place-items: stretch;
+      align-items: stretch;
+      padding: 5.4rem clamp(1.25rem, 3vw, 2rem) 2rem;
+      overflow: hidden;
+    }
+
+    body.has-images .intro-panel {
+      position: static;
+      width: 100%;
+      height: calc(100vh - 7.4rem);
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 0 1.1rem 0 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      text-align: left;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+    }
+
+    body.has-images .brand-block {
+      margin-bottom: 1rem;
+    }
+
+    body.has-images .intro-title {
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      letter-spacing: -0.052em;
+    }
+
+    body.has-images .intro-copy {
+      margin: 0.95rem 0 0;
+      font-size: 0.94rem;
+      line-height: 1.55;
+    }
+
+    body.has-images .drop-zone {
+      min-height: 160px;
+      padding: 1.1rem;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    body.has-images .drop-icon {
+      width: 3rem;
+      height: 3rem;
+      font-size: 1.25rem;
+      border-radius: 0;
+    }
+
+    body.has-images .drop-text {
+      font-size: 0.92rem;
+    }
+
+    body.has-images .models-panel,
+    body.has-images .main-area {
+      display: block;
+    }
+
+    body.has-images .main-area {
+      height: calc(100vh - 7.4rem);
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      padding-right: 0.2rem;
+    }
+
+    @media (max-width: 600px) {
+      .top-bar {
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.65rem 0.72rem;
+      }
+
+      .top-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-width: 0;
+      }
+
+      .top-eyebrow {
+        flex: 0 0 auto;
+        margin-bottom: 0;
+        font-size: 0.95rem;
+        letter-spacing: 0;
+      }
+
+      .top-eyebrow span {
+        display: none;
+      }
+
+      .top-title {
+        overflow: hidden;
+        font-size: clamp(1rem, 4.7vw, 1.32rem);
+        line-height: 1;
+        text-overflow: ellipsis;
+      }
+
+      .options {
+        width: auto;
+        flex: 0 0 auto;
+        justify-content: flex-end;
+        border-radius: 0;
+      }
+
+      .app-shell {
+        padding-top: 5.25rem;
+      }
+
+      .intro-title {
+        font-size: clamp(2.7rem, 15vw, 4.8rem);
+      }
+
+      .drop-zone {
+        min-height: 220px;
+        border-radius: 1.4rem;
+      }
+
+      body.has-images {
+        overflow: auto;
+      }
+
+      body.has-images .app-shell {
+        display: block;
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+        padding: 5.2rem 0.9rem 4.7rem;
+      }
+
+      body.has-images.mobile-menu-open .app-shell {
+        padding-bottom: 16.5rem;
+      }
+
+      body.has-images .intro-panel {
+        position: fixed;
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 60;
+        width: 100vw;
+        height: auto;
+        min-height: 0;
+        max-height: 50vh;
+        overflow: auto;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        padding: 0.65rem;
+        border-top: 1px solid var(--border);
+        background: var(--panel-bg);
+        backdrop-filter: blur(14px);
+        text-align: center;
+      }
+
+      body.has-images .mobile-menu-toggle {
+        order: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        width: 100%;
+      }
+
+      body.has-images .brand-block,
+      body.has-images .drop-zone,
+      body.has-images .models-panel {
+        display: none;
+        width: 100%;
+      }
+
+      body.has-images.mobile-menu-open .brand-block,
+      body.has-images.mobile-menu-open .drop-zone,
+      body.has-images.mobile-menu-open .models-panel {
+        display: grid;
+      }
+
+      body.has-images .brand-block {
+        order: 1;
+        gap: 0.5rem;
+        margin: 0;
+      }
+
+      body.has-images .drop-zone {
+        order: 2;
+      }
+
+      body.has-images .models-panel {
+        order: 3;
+      }
+
+      body.has-images .eyebrow {
+        display: none;
+      }
+
+      body.has-images .intro-title {
+        display: none;
+      }
+
+      body.has-images .intro-copy {
+        display: none;
+      }
+
+      body.has-images .mobile-about {
+        display: block;
+        width: 100%;
+        color: var(--text);
+      }
+
+      body.has-images .mobile-about summary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        gap: 0.5rem;
+        padding: 0.68rem 0.8rem;
+        border: 1px solid var(--border);
+        background: var(--panel-solid);
+        cursor: pointer;
+        list-style: none;
+        font-weight: 700;
+      }
+
+      body.has-images .mobile-menu-toggle,
+      body.has-images .mobile-about,
+      body.has-images .mobile-about summary,
+      body.has-images .drop-content,
+      body.has-images .select-button,
+      body.has-images .model-item,
+      body.has-images .model-header {
+        width: 100%;
+      }
+
+      body.has-images .model-selector {
+        flex: 1 1 auto;
+        width: auto;
+      }
+
+      body.has-images .model-control-button,
+      body.has-images .model-options .form-select {
+        width: 100%;
+      }
+
+      body.has-images .mobile-about summary::-webkit-details-marker {
+        display: none;
+      }
+
+      body.has-images .mobile-about p {
+        width: 100%;
+        margin: 0.55rem 0 0;
+        padding: 0 0.35rem 0.2rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+      }
+
+      body.has-images .drop-zone {
+        min-height: auto;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+      }
+
+      body.has-images .drop-zone:hover,
+      body.has-images .drop-zone:focus-visible,
+      body.has-images .drop-zone.is-dragging {
+        transform: none;
+        background: transparent;
+      }
+
+      body.has-images .drop-content {
+        width: 100%;
+        gap: 0;
+      }
+
+      body.has-images .drop-icon,
+      body.has-images .drop-text {
+        display: none;
+      }
+
+      body.has-images .select-button {
+        width: 100%;
+        padding: 0.72rem 0.8rem;
+        box-shadow: none;
+      }
+
+      body.has-images .model-selector,
+      body.has-images .model-control-button,
+      body.has-images .model-options .form-select {
+        width: 100%;
+      }
+
+      body.has-images .models-panel {
+        margin: 0;
+        border-top: 0;
+      }
+
+      body.has-images .models-heading {
+        display: none;
+      }
+
+      .model-item {
+        background: var(--panel-solid);
+      }
+
+      .model-options {
+        text-align: left;
+      }
+
+      body.has-images .main-area {
+        height: auto;
+        overflow: visible;
+        padding-right: 0;
+      }
+
+      .section-header {
+        display: block;
+        margin-bottom: 0.85rem;
+      }
+
+      .mosaic-preview {
+        width: min(86%, 360px);
+        max-height: 86%;
+      }
+
+      .mosaic-preview.is-visible {
+        grid-template-columns: 1fr;
+      }
+
+      .mosaic-preview img {
+        max-height: 30vh;
+      }
+
+      .section-meta {
+        margin-top: 0.45rem;
+        white-space: normal;
+      }
+
+      .dominant-mosaic-wrap,
+      .dominant-bars-wrap,
+      .plot-wrap,
+      .rings-wrap,
+      .bricks-wrap {
+        width: min(100%, calc(100vw - 1.8rem));
+        margin-inline: auto;
+      }
+
+      .plot-field {
+        inset: 0.85rem;
+      }
+
+      .album-grid {
+        grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+        gap: 0.7rem;
+      }
+
+      .thumb-caption {
+        display: none;
+      }
+
+      .thumb-remove {
+        opacity: 1;
+        transform: none;
+      }
+    }
+  </style>
+</head>
+
+<body data-theme="light">
+  <header class="top-bar" aria-label="Options">
+    <div class="top-brand" aria-label="Drag and Hue">
+      <div class="top-eyebrow">
+        <i class="fa-solid fa-droplet" aria-hidden="true"></i>
+        <span data-i18n="eyebrow">visual tools</span>
+      </div>
+
+      <h1 class="top-title" data-i18n="title">Drag and Hue</h1>
+    </div>
+
+    <div class="options">
+      <button class="btn btn-sm" type="button" id="themeToggle">
+        <i class="fa-solid fa-moon" id="themeIcon" aria-hidden="true"></i>
+        <span id="themeLabel">Dark</span>
+      </button>
+
+      <div class="btn-group btn-group-sm" role="group" aria-label="Language">
+        <button class="btn btn-secondary active" type="button" data-lang-button="en" aria-pressed="true">EN</button>
+        <button class="btn" type="button" data-lang-button="fr" aria-pressed="false">FR</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="intro-panel" aria-label="Drag and Hue menu">
+      <button class="mobile-menu-toggle" type="button" id="mobileMenuToggle" aria-expanded="false">
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        <span data-i18n="showMenu">Show menu</span>
+      </button>
+
+      <div class="brand-block">
+        <p class="intro-copy" data-i18n="intro">
+          Drag &amp; Hue is a series of simple drag &amp; drop tools to visualize visual images.
+        </p>
+
+        <details class="mobile-about">
+          <summary>
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            <span data-i18n="about">About</span>
+          </summary>
+          <p data-i18n="introMobile">
+            Drag &amp; Hue is a series of simple drag &amp; drop tools to visualize visual images.
+          </p>
+        </details>
+      </div>
+
+      <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="Drop images here or select local files">
+        <div class="drop-content">
+          <span class="drop-icon" aria-hidden="true">
+            <i class="fa-solid fa-images"></i>
+          </span>
+
+          <p class="drop-text" data-i18n="drop">drop images here</p>
+
+          <button class="select-button" type="button" id="selectButton">
+            <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+            <span data-i18n="select">select local files</span>
+          </button>
+        </div>
+      </div>
+
+      <section class="models-panel" aria-label="Visualization models">
+        <h2 class="models-heading" data-i18n="modelsHeading">Visualization models</h2>
+
+        <article class="model-item" id="mosaicModelItem">
+          <div class="model-header">
+            <button class="model-selector" type="button" id="mosaicModelButton" aria-pressed="false">
+              <span class="model-selector-label">
+                <i class="fa-solid fa-border-all" aria-hidden="true"></i>
+                <span data-i18n="mosaicModel">Mosaic</span>
+              </span>
+            </button>
+
+            <button class="model-toggle" type="button" id="mosaicModelToggle" aria-expanded="false" aria-controls="mosaicModelOptions" aria-label="Toggle Mosaic controls">
+              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <div class="model-options" id="mosaicModelOptions">
+            <label for="sortSelect" data-i18n="sortBy">Sort by</label>
+            <select class="form-select form-select-sm" id="sortSelect">
+              <option value="hue" data-i18n="sortHue">Hue</option>
+              <option value="saturation" data-i18n="sortSaturation">Saturation</option>
+              <option value="brightness" data-i18n="sortBrightness">Brightness</option>
+            </select>
+
+            <div class="model-actions">
+              <button class="model-control-button" type="button" id="saveMosaicButton">
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                <span data-i18n="savePng">Save mosaic as PNG</span>
+              </button>
+
+              <button class="model-control-button" type="button" id="restartMosaicButton">
+                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                <span data-i18n="restart">Restart</span>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <article class="model-item" id="barsModelItem">
+          <div class="model-header">
+            <button class="model-selector" type="button" id="barsModelButton" aria-pressed="false">
+              <span class="model-selector-label">
+                <i class="fa-solid fa-chart-simple" aria-hidden="true"></i>
+                <span data-i18n="barsModel">Bars</span>
+              </span>
+            </button>
+
+            <button class="model-toggle" type="button" id="barsModelToggle" aria-expanded="false" aria-controls="barsModelOptions" aria-label="Toggle Bars controls">
+              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <div class="model-options" id="barsModelOptions">
+            <label for="barsSortSelect" data-i18n="sortBy">Sort by</label>
+            <select class="form-select form-select-sm" id="barsSortSelect">
+              <option value="hue" data-i18n="sortHue">Hue</option>
+              <option value="saturation" data-i18n="sortSaturation">Saturation</option>
+              <option value="brightness" data-i18n="sortBrightness">Brightness</option>
+            </select>
+
+            <div class="model-actions">
+              <button class="model-control-button" type="button" id="saveBarsButton">
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                <span data-i18n="saveBarsPng">Save bars as PNG</span>
+              </button>
+
+              <button class="model-control-button" type="button" id="restartBarsButton">
+                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                <span data-i18n="restart">Restart</span>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <article class="model-item" id="listmakerModelItem">
+          <div class="model-header">
+            <button class="model-selector" type="button" id="listmakerModelButton" aria-pressed="false">
+              <span class="model-selector-label">
+                <i class="fa-solid fa-table-list" aria-hidden="true"></i>
+                <span data-i18n="listmakerModel">Listmaker</span>
+              </span>
+            </button>
+
+            <button class="model-toggle" type="button" id="listmakerModelToggle" aria-expanded="false" aria-controls="listmakerModelOptions" aria-label="Toggle Listmaker controls">
+              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <div class="model-options" id="listmakerModelOptions">
+            <div class="model-actions">
+              <button class="model-control-button" type="button" id="downloadCsvButton">
+                <i class="fa-solid fa-file-csv" aria-hidden="true"></i>
+                <span data-i18n="downloadCsv">Download CSV</span>
+              </button>
+
+              <button class="model-control-button" type="button" id="restartListmakerButton">
+                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                <span data-i18n="restart">Restart</span>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <article class="model-item" id="plotModelItem">
+          <div class="model-header">
+            <button class="model-selector" type="button" id="plotModelButton" aria-pressed="false">
+              <span class="model-selector-label">
+                <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                <span data-i18n="plotModel">Plot</span>
+              </span>
+            </button>
+
+            <button class="model-toggle" type="button" id="plotModelToggle" aria-expanded="false" aria-controls="plotModelOptions" aria-label="Toggle Plot controls">
+              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <div class="model-options" id="plotModelOptions">
+            <label for="plotYAxisSelect" data-i18n="plotVerticalAxis">Vertical axis</label>
+            <select class="form-select form-select-sm" id="plotYAxisSelect">
+              <option value="brightness" data-i18n="plotBrightness">Brightness</option>
+              <option value="saturation" data-i18n="plotSaturation">Saturation</option>
+            </select>
+
+            <div class="plot-control-row">
+              <label for="plotSizeSlider" data-i18n="plotImageSize">Image size</label>
+              <input class="form-range" id="plotSizeSlider" type="range" min="12" max="96" value="42">
+            </div>
+
+            <label class="model-checkbox" for="plotShowImagesCheckbox">
+              <input id="plotShowImagesCheckbox" type="checkbox" checked>
+              <span data-i18n="plotShowImages">Show images</span>
+            </label>
+
+            <div class="model-actions">
+              <button class="model-control-button" type="button" id="savePlotButton">
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                <span data-i18n="savePlotPng">Save plot as PNG</span>
+              </button>
+
+              <button class="model-control-button" type="button" id="restartPlotButton">
+                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                <span data-i18n="restart">Restart</span>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <article class="model-item" id="ringsModelItem">
+          <div class="model-header">
+            <button class="model-selector" type="button" id="ringsModelButton" aria-pressed="false">
+              <span class="model-selector-label">
+                <i class="fa-solid fa-circle-notch" aria-hidden="true"></i>
+                <span data-i18n="ringsModel">Rings</span>
+              </span>
+            </button>
+
+            <button class="model-toggle" type="button" id="ringsModelToggle" aria-expanded="false" aria-controls="ringsModelOptions" aria-label="Toggle Rings controls">
+              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <div class="model-options" id="ringsModelOptions">
+            <label for="ringsSortSelect" data-i18n="sortBy">Sort by</label>
+            <select class="form-select form-select-sm" id="ringsSortSelect">
+              <option value="original" data-i18n="sortOriginal">Original order</option>
+              <option value="hue" data-i18n="sortHue">Hue</option>
+              <option value="saturation" data-i18n="sortSaturation">Saturation</option>
+              <option value="brightness" data-i18n="sortBrightness">Brightness</option>
+            </select>
+
+            <div class="model-actions">
+              <button class="model-control-button" type="button" id="saveRingsButton">
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                <span data-i18n="saveRingsPng">Save rings as PNG</span>
+              </button>
+
+              <button class="model-control-button" type="button" id="restartRingsButton">
+                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                <span data-i18n="restart">Restart</span>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <article class="model-item" id="bricksModelItem">
+          <div class="model-header">
+            <button class="model-selector" type="button" id="bricksModelButton" aria-pressed="false">
+              <span class="model-selector-label">
+                <i class="fa-solid fa-grip" aria-hidden="true"></i>
+                <span data-i18n="bricksModel">Bricks</span>
+              </span>
+            </button>
+
+            <button class="model-toggle" type="button" id="bricksModelToggle" aria-expanded="false" aria-controls="bricksModelOptions" aria-label="Toggle Bricks controls">
+              <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <div class="model-options" id="bricksModelOptions">
+            <label for="bricksSortSelect" data-i18n="sortBy">Sort by</label>
+            <select class="form-select form-select-sm" id="bricksSortSelect">
+              <option value="primary" data-i18n="sortPrimaryAmount">Amount of first color</option>
+              <option value="secondary" data-i18n="sortSecondaryAmount">Amount of second color</option>
+              <option value="original" selected data-i18n="sortOriginal">Original order</option>
+            </select>
+
+            <div class="model-actions">
+              <button class="model-control-button" type="button" id="saveBricksButton">
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                <span data-i18n="saveBricksPng">Save bricks as PNG</span>
+              </button>
+
+              <button class="model-control-button" type="button" id="restartBricksButton">
+                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                <span data-i18n="restart">Restart</span>
+              </button>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <input class="sr-only" id="fileInput" type="file" accept="image/*" multiple>
+    </aside>
+
+    <section class="main-area" aria-live="polite">
+      <section class="section-card album-view" aria-label="Image Album">
+        <div class="section-header">
+          <h2 class="section-title" data-i18n="albumTitle">Image Album</h2>
+
+          <div class="section-meta">
+            <span id="imageCount">0 images</span>
+            <button class="menu-button" type="button" id="restartAlbumButton">
+              <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+              <span data-i18n="restart">Restart</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="album-grid" id="albumGrid"></div>
+      </section>
+
+      <section class="section-card mosaic-view" aria-label="Mosaic visualization">
+        <div class="section-header">
+          <h2 class="section-title" data-i18n="mosaicTitle">Mosaic</h2>
+          <p class="section-meta" id="mosaicMeta">0 colors</p>
+        </div>
+
+        <div class="dominant-mosaic-wrap">
+          <div class="dominant-mosaic-stage" id="dominantMosaicStage">
+            <div class="dominant-mosaic" id="dominantMosaic"></div>
+
+            <aside class="mosaic-preview" id="mosaicPreview" aria-live="polite">
+              <img id="mosaicPreviewImage" alt="">
+              <div>
+                <p class="mosaic-preview-label" data-i18n="previewLabel">Image preview</p>
+                <h3 class="mosaic-preview-title" id="mosaicPreviewTitle"></h3>
+                <p class="mosaic-preview-color" id="mosaicPreviewColor"></p>
+              </div>
+            </aside>
+          </div>
+
+          <p class="mosaic-status" id="mosaicStatus" data-i18n="mosaicWaiting">
+            Select the Mosaic model to visualize the dominant colors.
+          </p>
+        </div>
+      </section>
+
+      <section class="section-card bars-view" aria-label="Bars visualization">
+        <div class="section-header">
+          <h2 class="section-title" data-i18n="barsTitle">Bars</h2>
+          <p class="section-meta" id="barsMeta">0 colors</p>
+        </div>
+
+        <div class="dominant-bars-wrap">
+          <div class="dominant-bars-stage" id="dominantBarsStage">
+            <div class="dominant-bars" id="dominantBars"></div>
+
+            <aside class="mosaic-preview" id="barsPreview" aria-live="polite">
+              <img id="barsPreviewImage" alt="">
+              <div>
+                <p class="mosaic-preview-label" data-i18n="previewLabel">Image preview</p>
+                <h3 class="mosaic-preview-title" id="barsPreviewTitle"></h3>
+                <p class="mosaic-preview-color" id="barsPreviewColor"></p>
+              </div>
+            </aside>
+          </div>
+
+          <p class="mosaic-status" id="barsStatus" data-i18n="barsWaiting">
+            Select the Bars model to visualize the dominant colors.
+          </p>
+        </div>
+      </section>
+
+      <section class="section-card listmaker-view" aria-label="Listmaker">
+        <div class="section-header">
+          <h2 class="section-title" data-i18n="listmakerTitle">Listmaker</h2>
+          <p class="section-meta" id="listmakerMeta">0 rows</p>
+        </div>
+
+        <div class="listmaker-table-wrap">
+          <table class="listmaker-table" id="listmakerTable">
+            <thead>
+              <tr>
+                <th data-i18n="colThumbnail">Thumbnail</th>
+                <th data-i18n="colColor">Color</th>
+                <th>RGB</th>
+                <th>HSL</th>
+                <th data-i18n="colHexadecimal">Hexadecimal</th>
+                <th data-i18n="colFilename">Filename</th>
+                <th data-i18n="colRed">Red</th>
+                <th data-i18n="colGreen">Green</th>
+                <th data-i18n="colBlue">Blue</th>
+                <th data-i18n="colHue">Hue</th>
+                <th data-i18n="colSat">Sat</th>
+                <th data-i18n="colBri">Bri</th>
+              </tr>
+            </thead>
+            <tbody id="listmakerBody"></tbody>
+          </table>
+        </div>
+
+        <p class="mosaic-status" id="listmakerStatus" data-i18n="listmakerWaiting">
+          Select the Listmaker model to build the image table.
+        </p>
+      </section>
+
+      <section class="section-card plot-view" aria-label="Plot visualization">
+        <div class="section-header">
+          <h2 class="section-title" data-i18n="plotTitle">Plot</h2>
+          <p class="section-meta" id="plotMeta">0 points</p>
+        </div>
+
+        <div class="plot-wrap">
+          <div class="plot-stage" id="plotStage">
+            <div class="plot-field" aria-label="Hue by brightness or saturation plot">
+              <span class="plot-axis-y" aria-hidden="true"></span>
+              <span class="plot-axis-x" aria-hidden="true"></span>
+              <div class="plot-items" id="plotItems"></div>
+            </div>
+
+            <aside class="mosaic-preview" id="plotPreview" aria-live="polite">
+              <img id="plotPreviewImage" alt="">
+              <div>
+                <p class="mosaic-preview-label" data-i18n="previewLabel">Image preview</p>
+                <h3 class="mosaic-preview-title" id="plotPreviewTitle"></h3>
+                <p class="mosaic-preview-color" id="plotPreviewColor"></p>
+              </div>
+            </aside>
+          </div>
+
+          <p class="mosaic-status" id="plotStatus" data-i18n="plotWaiting">
+            Select the Plot model to map images by hue and brightness.
+          </p>
+        </div>
+      </section>
+
+      <section class="section-card rings-view" aria-label="Rings visualization">
+        <div class="section-header">
+          <h2 class="section-title" data-i18n="ringsTitle">Rings</h2>
+          <p class="section-meta" id="ringsMeta">0 rings</p>
+        </div>
+
+        <div class="rings-wrap">
+          <div class="rings-stage" id="ringsStage">
+            <svg class="rings-svg" id="ringsSvg" viewBox="0 0 1000 1000" role="img" aria-label="Dominant color rings"></svg>
+
+            <aside class="mosaic-preview" id="ringsPreview" aria-live="polite">
+              <img id="ringsPreviewImage" alt="">
+              <div>
+                <p class="mosaic-preview-label" data-i18n="previewLabel">Image preview</p>
+                <h3 class="mosaic-preview-title" id="ringsPreviewTitle"></h3>
+                <p class="mosaic-preview-color" id="ringsPreviewColor"></p>
+              </div>
+            </aside>
+          </div>
+
+          <p class="mosaic-status" id="ringsStatus" data-i18n="ringsWaiting">
+            Select the Rings model to visualize dominant colors as concentric rings.
+          </p>
+        </div>
+      </section>
+
+      <section class="section-card bricks-view" aria-label="Bricks visualization">
+        <div class="section-header">
+          <h2 class="section-title" data-i18n="bricksTitle">Bricks</h2>
+          <p class="section-meta" id="bricksMeta">0 bricks</p>
+        </div>
+
+        <div class="bricks-wrap">
+          <div class="bricks-stage" id="bricksStage">
+            <div class="bricks-wall" id="bricksWall"></div>
+
+            <aside class="mosaic-preview" id="bricksPreview" aria-live="polite">
+              <img id="bricksPreviewImage" alt="">
+              <div>
+                <p class="mosaic-preview-label" data-i18n="previewLabel">Image preview</p>
+                <h3 class="mosaic-preview-title" id="bricksPreviewTitle"></h3>
+                <p class="mosaic-preview-color" id="bricksPreviewColor"></p>
+              </div>
+            </aside>
+          </div>
+
+          <p class="mosaic-status" id="bricksStatus" data-i18n="bricksWaiting">
+            Select the Bricks model to visualize the two most dominant colors.
+          </p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <script>
+    const translations = {
+      en: {
+        pageTitle: "Drag and Hue",
+        eyebrow: "visual tools",
+        title: "Drag and Hue",
+        intro: "Drag & Hue is a series of simple drag & drop tools to visualize visual images.",
+        introMobile: "Drag & Hue is a series of simple drag & drop tools to visualize visual images.",
+        about: "About",
+        drop: "drop images here",
+        select: "select local files",
+        modelsHeading: "Visualization models",
+        mosaicModel: "Mosaic",
+        barsModel: "Bars",
+        listmakerModel: "Listmaker",
+        plotModel: "Plot",
+        ringsModel: "Rings",
+        bricksModel: "Bricks",
+        sortBy: "Sort by",
+        sortOriginal: "Original order",
+        sortPrimaryAmount: "Amount of first color",
+        sortSecondaryAmount: "Amount of second color",
+        sortHue: "Hue",
+        sortSaturation: "Saturation",
+        sortBrightness: "Brightness",
+        savePng: "Save mosaic as PNG",
+        saveBarsPng: "Save bars as PNG",
+        savePlotPng: "Save plot as PNG",
+        saveRingsPng: "Save rings as PNG",
+        saveBricksPng: "Save bricks as PNG",
+        downloadCsv: "Download CSV",
+        restart: "Restart",
+        albumTitle: "Image Album",
+        mosaicTitle: "Mosaic",
+        barsTitle: "Bars",
+        listmakerTitle: "Listmaker",
+        plotTitle: "Plot",
+        ringsTitle: "Rings",
+        bricksTitle: "Bricks",
+        darkMode: "Dark",
+        lightMode: "Light",
+        oneImage: "1 image",
+        manyImages: "{count} images",
+        oneColor: "1 color",
+        manyColors: "{count} colors",
+        oneRow: "1 row",
+        manyRows: "{count} rows",
+        onePoint: "1 point",
+        manyPoints: "{count} points",
+        oneRing: "1 anneau",
+        manyRings: "{count} anneaux",
+        oneBrick: "1 brique",
+        manyBricks: "{count} briques",
+        oneRing: "1 ring",
+        manyRings: "{count} rings",
+        oneBrick: "1 brick",
+        manyBricks: "{count} bricks",
+        removeImage: "Remove image",
+        dropAria: "Drop images here or select local files",
+        mosaicWaiting: "Select the Mosaic model to visualize the dominant colors.",
+        mosaicReady: "Dominant colors extracted with ColorThief.",
+        mosaicProcessing: "Extracting dominant colors with ColorThief…",
+        mosaicEmpty: "Drop or select images to build the Mosaic.",
+        barsWaiting: "Select the Bars model to visualize the dominant colors.",
+        barsReady: "Dominant color bars extracted with ColorThief.",
+        barsProcessing: "Extracting dominant color bars with ColorThief…",
+        barsEmpty: "Drop or select images to build the Bars view.",
+        listmakerWaiting: "Select the Listmaker model to build the image table.",
+        listmakerReady: "Listmaker table built from ColorThief dominant colors.",
+        listmakerProcessing: "Building the Listmaker table with ColorThief…",
+        listmakerEmpty: "Drop or select images to build the Listmaker table.",
+        plotWaiting: "Select the Plot model to map images by hue and brightness.",
+        plotReady: "Plot built from ColorThief hue and brightness values.",
+        plotProcessing: "Building the Plot with ColorThief…",
+        plotEmpty: "Drop or select images to build the Plot.",
+        ringsWaiting: "Select the Rings model to visualize dominant colors as concentric rings.",
+        ringsReady: "Rings built from ColorThief dominant colors.",
+        ringsProcessing: "Building the Rings with ColorThief…",
+        ringsEmpty: "Drop or select images to build the Rings.",
+        bricksWaiting: "Select the Bricks model to visualize the two most dominant colors.",
+        bricksReady: "Bricks built from the first and second dominant colors.",
+        bricksProcessing: "Building the Bricks with ColorThief…",
+        bricksEmpty: "Drop or select images to build the Bricks.",
+        previewLabel: "Image preview",
+        previewColor: "Dominant color: rgb({r}, {g}, {b})",
+        previewTwoColors: "Primary: rgb({r1}, {g1}, {b1}) · Secondary: rgb({r2}, {g2}, {b2})",
+        plotVerticalAxis: "Vertical axis",
+        plotBrightness: "Brightness",
+        plotSaturation: "Saturation",
+        plotImageSize: "Image size",
+        plotShowImages: "Show images",
+        colThumbnail: "Thumbnail",
+        colColor: "Color",
+        colHexadecimal: "Hexadecimal",
+        colFilename: "Filename",
+        colRed: "Red",
+        colGreen: "Green",
+        colBlue: "Blue",
+        colHue: "Hue",
+        colSat: "Sat",
+        colBri: "Bri",
+        showMenu: "Show menu",
+        hideMenu: "Hide menu"
+      },
+      fr: {
+        pageTitle: "Drag and Hue",
+        eyebrow: "outils visuels",
+        title: "Drag and Hue",
+        intro: "Drag & Hue est une série d’outils simples de glisser-déposer pour visualiser des images.",
+        introMobile: "Drag & Hue est une série d’outils simples de glisser-déposer pour visualiser des images.",
+        about: "À propos",
+        drop: "déposez les images ici",
+        select: "sélectionner des fichiers",
+        modelsHeading: "Modèles de visualisation",
+        mosaicModel: "Mosaïque",
+        barsModel: "Barres",
+        listmakerModel: "Listmaker",
+        plotModel: "Plot",
+        ringsModel: "Anneaux",
+        bricksModel: "Briques",
+        sortBy: "Trier par",
+        sortOriginal: "Ordre original",
+        sortPrimaryAmount: "Quantité de la première couleur",
+        sortSecondaryAmount: "Quantité de la deuxième couleur",
+        sortHue: "Teinte",
+        sortSaturation: "Saturation",
+        sortBrightness: "Luminosité",
+        savePng: "Enregistrer la mosaïque en PNG",
+        saveBarsPng: "Enregistrer les barres en PNG",
+        savePlotPng: "Enregistrer le plot en PNG",
+        saveRingsPng: "Enregistrer les anneaux en PNG",
+        saveBricksPng: "Enregistrer les briques en PNG",
+        downloadCsv: "Télécharger le CSV",
+        restart: "Recommencer",
+        albumTitle: "Album d’images",
+        mosaicTitle: "Mosaïque",
+        barsTitle: "Barres",
+        listmakerTitle: "Listmaker",
+        plotTitle: "Plot",
+        ringsTitle: "Anneaux",
+        bricksTitle: "Briques",
+        darkMode: "Sombre",
+        lightMode: "Clair",
+        oneImage: "1 image",
+        manyImages: "{count} images",
+        oneColor: "1 couleur",
+        manyColors: "{count} couleurs",
+        oneRow: "1 ligne",
+        manyRows: "{count} lignes",
+        onePoint: "1 point",
+        manyPoints: "{count} points",
+        removeImage: "Retirer l’image",
+        dropAria: "Déposez des images ici ou sélectionnez des fichiers locaux",
+        mosaicWaiting: "Sélectionnez le modèle Mosaïque pour visualiser les couleurs dominantes.",
+        mosaicReady: "Couleurs dominantes extraites avec ColorThief.",
+        mosaicProcessing: "Extraction des couleurs dominantes avec ColorThief…",
+        mosaicEmpty: "Déposez ou sélectionnez des images pour générer la Mosaïque.",
+        barsWaiting: "Sélectionnez le modèle Barres pour visualiser les couleurs dominantes.",
+        barsReady: "Barres de couleurs dominantes extraites avec ColorThief.",
+        barsProcessing: "Extraction des barres de couleurs dominantes avec ColorThief…",
+        barsEmpty: "Déposez ou sélectionnez des images pour générer les Barres.",
+        listmakerWaiting: "Sélectionnez le modèle Listmaker pour générer le tableau d’images.",
+        listmakerReady: "Tableau Listmaker généré avec les couleurs dominantes de ColorThief.",
+        listmakerProcessing: "Génération du tableau Listmaker avec ColorThief…",
+        listmakerEmpty: "Déposez ou sélectionnez des images pour générer le tableau Listmaker.",
+        plotWaiting: "Sélectionnez le modèle Plot pour placer les images selon la teinte et la luminosité.",
+        plotReady: "Plot généré avec les valeurs de teinte et luminosité de ColorThief.",
+        plotProcessing: "Génération du Plot avec ColorThief…",
+        plotEmpty: "Déposez ou sélectionnez des images pour générer le Plot.",
+        ringsWaiting: "Sélectionnez le modèle Anneaux pour visualiser les couleurs dominantes en anneaux concentriques.",
+        ringsReady: "Anneaux générés avec les couleurs dominantes de ColorThief.",
+        ringsProcessing: "Génération des anneaux avec ColorThief…",
+        ringsEmpty: "Déposez ou sélectionnez des images pour générer les Anneaux.",
+        bricksWaiting: "Sélectionnez le modèle Briques pour visualiser les deux couleurs les plus dominantes.",
+        bricksReady: "Briques générées à partir des première et deuxième couleurs dominantes.",
+        bricksProcessing: "Génération des briques avec ColorThief…",
+        bricksEmpty: "Déposez ou sélectionnez des images pour générer les briques.",
+        previewLabel: "Aperçu de l’image",
+        previewColor: "Couleur dominante : rgb({r}, {g}, {b})",
+        previewTwoColors: "Primaire : rgb({r1}, {g1}, {b1}) · Secondaire : rgb({r2}, {g2}, {b2})",
+        plotVerticalAxis: "Axe vertical",
+        plotBrightness: "Luminosité",
+        plotSaturation: "Saturation",
+        plotImageSize: "Taille des images",
+        plotShowImages: "Afficher les images",
+        colThumbnail: "Vignette",
+        colColor: "Couleur",
+        colHexadecimal: "Hexadécimal",
+        colFilename: "Nom du fichier",
+        colRed: "Rouge",
+        colGreen: "Vert",
+        colBlue: "Bleu",
+        colHue: "Teinte",
+        colSat: "Sat",
+        colBri: "Lum",
+        showMenu: "Afficher le menu",
+        hideMenu: "Masquer le menu"
+      }
+    };
+
+    const body = document.body;
+    const htmlElement = document.documentElement;
+    const themeToggle = document.getElementById("themeToggle");
+    const themeIcon = document.getElementById("themeIcon");
+    const themeLabel = document.getElementById("themeLabel");
+    const langButtons = document.querySelectorAll("[data-lang-button]");
+    const dropZone = document.getElementById("dropZone");
+    const selectButton = document.getElementById("selectButton");
+    const fileInput = document.getElementById("fileInput");
+    const mobileMenuToggle = document.getElementById("mobileMenuToggle");
+    const albumGrid = document.getElementById("albumGrid");
+    const imageCount = document.getElementById("imageCount");
+    const restartAlbumButton = document.getElementById("restartAlbumButton");
+    const restartMosaicButton = document.getElementById("restartMosaicButton");
+    const saveBarsButton = document.getElementById("saveBarsButton");
+    const restartBarsButton = document.getElementById("restartBarsButton");
+    const downloadCsvButton = document.getElementById("downloadCsvButton");
+    const restartListmakerButton = document.getElementById("restartListmakerButton");
+    const savePlotButton = document.getElementById("savePlotButton");
+    const restartPlotButton = document.getElementById("restartPlotButton");
+    const saveRingsButton = document.getElementById("saveRingsButton");
+    const restartRingsButton = document.getElementById("restartRingsButton");
+    const saveBricksButton = document.getElementById("saveBricksButton");
+    const restartBricksButton = document.getElementById("restartBricksButton");
+    const mosaicModelItem = document.getElementById("mosaicModelItem");
+    const mosaicModelButton = document.getElementById("mosaicModelButton");
+    const mosaicModelToggle = document.getElementById("mosaicModelToggle");
+    const barsModelItem = document.getElementById("barsModelItem");
+    const barsModelButton = document.getElementById("barsModelButton");
+    const barsModelToggle = document.getElementById("barsModelToggle");
+    const listmakerModelItem = document.getElementById("listmakerModelItem");
+    const listmakerModelButton = document.getElementById("listmakerModelButton");
+    const listmakerModelToggle = document.getElementById("listmakerModelToggle");
+    const plotModelItem = document.getElementById("plotModelItem");
+    const plotModelButton = document.getElementById("plotModelButton");
+    const plotModelToggle = document.getElementById("plotModelToggle");
+    const ringsModelItem = document.getElementById("ringsModelItem");
+    const ringsModelButton = document.getElementById("ringsModelButton");
+    const ringsModelToggle = document.getElementById("ringsModelToggle");
+    const bricksModelItem = document.getElementById("bricksModelItem");
+    const bricksModelButton = document.getElementById("bricksModelButton");
+    const bricksModelToggle = document.getElementById("bricksModelToggle");
+    const sortSelect = document.getElementById("sortSelect");
+    const barsSortSelect = document.getElementById("barsSortSelect");
+    const plotYAxisSelect = document.getElementById("plotYAxisSelect");
+    const plotSizeSlider = document.getElementById("plotSizeSlider");
+    const plotShowImagesCheckbox = document.getElementById("plotShowImagesCheckbox");
+    const ringsSortSelect = document.getElementById("ringsSortSelect");
+    const bricksSortSelect = document.getElementById("bricksSortSelect");
+    const saveMosaicButton = document.getElementById("saveMosaicButton");
+    const dominantMosaic = document.getElementById("dominantMosaic");
+    const dominantBars = document.getElementById("dominantBars");
+    const plotItems = document.getElementById("plotItems");
+    const ringsSvg = document.getElementById("ringsSvg");
+    const bricksWall = document.getElementById("bricksWall");
+    const listmakerBody = document.getElementById("listmakerBody");
+    const mosaicMeta = document.getElementById("mosaicMeta");
+    const barsMeta = document.getElementById("barsMeta");
+    const listmakerMeta = document.getElementById("listmakerMeta");
+    const plotMeta = document.getElementById("plotMeta");
+    const ringsMeta = document.getElementById("ringsMeta");
+    const bricksMeta = document.getElementById("bricksMeta");
+    const mosaicStatus = document.getElementById("mosaicStatus");
+    const barsStatus = document.getElementById("barsStatus");
+    const listmakerStatus = document.getElementById("listmakerStatus");
+    const plotStatus = document.getElementById("plotStatus");
+    const ringsStatus = document.getElementById("ringsStatus");
+    const bricksStatus = document.getElementById("bricksStatus");
+    const mosaicPreview = document.getElementById("mosaicPreview");
+    const mosaicPreviewImage = document.getElementById("mosaicPreviewImage");
+    const mosaicPreviewTitle = document.getElementById("mosaicPreviewTitle");
+    const mosaicPreviewColor = document.getElementById("mosaicPreviewColor");
+    const barsPreview = document.getElementById("barsPreview");
+    const barsPreviewImage = document.getElementById("barsPreviewImage");
+    const barsPreviewTitle = document.getElementById("barsPreviewTitle");
+    const barsPreviewColor = document.getElementById("barsPreviewColor");
+    const plotPreview = document.getElementById("plotPreview");
+    const plotPreviewImage = document.getElementById("plotPreviewImage");
+    const plotPreviewTitle = document.getElementById("plotPreviewTitle");
+    const plotPreviewColor = document.getElementById("plotPreviewColor");
+    const ringsPreview = document.getElementById("ringsPreview");
+    const ringsPreviewImage = document.getElementById("ringsPreviewImage");
+    const ringsPreviewTitle = document.getElementById("ringsPreviewTitle");
+    const ringsPreviewColor = document.getElementById("ringsPreviewColor");
+    const bricksPreview = document.getElementById("bricksPreview");
+    const bricksPreviewImage = document.getElementById("bricksPreviewImage");
+    const bricksPreviewTitle = document.getElementById("bricksPreviewTitle");
+    const bricksPreviewColor = document.getElementById("bricksPreviewColor");
+
+    const colorThief = new ColorThief();
+    const images = [];
+
+    let currentLanguage = "en";
+    let selectedModel = null;
+    let openControlsModel = null;
+    let sortMode = "hue";
+    let barsSortMode = "hue";
+    let plotYAxisMode = "brightness";
+    let plotPointSize = 42;
+    let plotShowImages = true;
+    let ringsSortMode = "original";
+    let bricksSortMode = "original";
+    let selectedPreviewId = null;
+    let isMobileMenuOpen = false;
+
+    function translate() {
+      const copy = translations[currentLanguage];
+
+      document.title = copy.pageTitle;
+      htmlElement.lang = currentLanguage;
+      htmlElement.dataset.language = currentLanguage;
+      dropZone.setAttribute("aria-label", copy.dropAria);
+
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        const key = node.dataset.i18n;
+        if (copy[key]) {
+          node.textContent = copy[key];
+        }
+      });
+
+      document.querySelectorAll("[data-remove-button]").forEach((button) => {
+        button.setAttribute("aria-label", copy.removeImage);
+        button.setAttribute("title", copy.removeImage);
+      });
+
+      [sortSelect, barsSortSelect, plotYAxisSelect, ringsSortSelect, bricksSortSelect].forEach((select) => {
+        Array.from(select.options).forEach((option) => {
+          const key = option.dataset.i18n;
+          if (key && copy[key]) option.textContent = copy[key];
+        });
+      });
+
+      updateThemeLabel();
+      updateMobileMenuLabel();
+      updateCounts();
+      updateMosaicStatus();
+      updateBarsStatus();
+      updateListmakerStatus();
+      updatePlotStatus();
+      updateRingsStatus();
+      updateBricksStatus();
+      updateMosaicPreview();
+      updateBarsPreview();
+      updatePlotPreview();
+      updateRingsPreview();
+      updateBricksPreview();
+      renderListmaker();
+      renderPlot();
+      renderRings();
+      renderBricks();
+
+      langButtons.forEach((button) => {
+        const isActive = button.dataset.langButton === currentLanguage;
+        button.classList.toggle("btn-secondary", isActive);
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+      });
+    }
+
+    function updateMobileMenuLabel() {
+      const copy = translations[currentLanguage];
+      const label = mobileMenuToggle.querySelector("span");
+      const icon = mobileMenuToggle.querySelector("i");
+
+      body.classList.toggle("mobile-menu-open", isMobileMenuOpen);
+      mobileMenuToggle.setAttribute("aria-expanded", String(isMobileMenuOpen));
+
+      if (label) {
+        label.textContent = isMobileMenuOpen ? copy.hideMenu : copy.showMenu;
+      }
+
+      if (icon) {
+        icon.className = isMobileMenuOpen ? "fa-solid fa-xmark" : "fa-solid fa-bars";
+      }
+    }
+
+    function updateThemeLabel() {
+      const copy = translations[currentLanguage];
+      const isDark = body.dataset.theme === "dark";
+
+      themeIcon.className = isDark ? "fa-solid fa-sun" : "fa-solid fa-moon";
+      themeLabel.textContent = isDark ? copy.lightMode : copy.darkMode;
+      themeToggle.setAttribute("aria-label", isDark ? copy.lightMode : copy.darkMode);
+    }
+
+    function updateCounts() {
+      const copy = translations[currentLanguage];
+      const count = images.length;
+      const colorCount = images.filter((image) => image.color).length;
+
+      imageCount.textContent = count === 1
+        ? copy.oneImage
+        : copy.manyImages.replace("{count}", count);
+
+      const colorCountText = colorCount === 1
+        ? copy.oneColor
+        : copy.manyColors.replace("{count}", colorCount);
+
+      mosaicMeta.textContent = colorCountText;
+      barsMeta.textContent = colorCountText;
+
+      listmakerMeta.textContent = count === 1
+        ? copy.oneRow
+        : copy.manyRows.replace("{count}", count);
+
+      plotMeta.textContent = count === 1
+        ? copy.onePoint
+        : copy.manyPoints.replace("{count}", count);
+
+      ringsMeta.textContent = count === 1
+        ? copy.oneRing
+        : copy.manyRings.replace("{count}", count);
+
+      bricksMeta.textContent = count === 1
+        ? copy.oneBrick
+        : copy.manyBricks.replace("{count}", count);
+    }
+
+    function updateLayoutState() {
+      const hasWorkspace = images.length > 0 || selectedModel !== null;
+
+      body.classList.toggle("has-images", hasWorkspace);
+      body.classList.toggle("model-mosaic", selectedModel === "mosaic");
+      body.classList.toggle("model-bars", selectedModel === "bars");
+      body.classList.toggle("model-listmaker", selectedModel === "listmaker");
+      body.classList.toggle("model-plot", selectedModel === "plot");
+      body.classList.toggle("model-rings", selectedModel === "rings");
+      body.classList.toggle("model-bricks", selectedModel === "bricks");
+
+      const isMosaicSelected = selectedModel === "mosaic";
+      const isBarsSelected = selectedModel === "bars";
+      const isListmakerSelected = selectedModel === "listmaker";
+      const isPlotSelected = selectedModel === "plot";
+      const isRingsSelected = selectedModel === "rings";
+      const isBricksSelected = selectedModel === "bricks";
+      const isMosaicOpen = openControlsModel === "mosaic";
+      const isBarsOpen = openControlsModel === "bars";
+      const isListmakerOpen = openControlsModel === "listmaker";
+      const isPlotOpen = openControlsModel === "plot";
+      const isRingsOpen = openControlsModel === "rings";
+      const isBricksOpen = openControlsModel === "bricks";
+
+      mosaicModelItem.classList.toggle("is-selected", isMosaicSelected);
+      mosaicModelItem.classList.toggle("is-open", isMosaicOpen);
+      mosaicModelButton.classList.toggle("active", isMosaicSelected);
+      mosaicModelButton.setAttribute("aria-pressed", String(isMosaicSelected));
+      mosaicModelToggle.setAttribute("aria-expanded", String(isMosaicOpen));
+
+      barsModelItem.classList.toggle("is-selected", isBarsSelected);
+      barsModelItem.classList.toggle("is-open", isBarsOpen);
+      barsModelButton.classList.toggle("active", isBarsSelected);
+      barsModelButton.setAttribute("aria-pressed", String(isBarsSelected));
+      barsModelToggle.setAttribute("aria-expanded", String(isBarsOpen));
+
+      listmakerModelItem.classList.toggle("is-selected", isListmakerSelected);
+      listmakerModelItem.classList.toggle("is-open", isListmakerOpen);
+      listmakerModelButton.classList.toggle("active", isListmakerSelected);
+      listmakerModelButton.setAttribute("aria-pressed", String(isListmakerSelected));
+      listmakerModelToggle.setAttribute("aria-expanded", String(isListmakerOpen));
+
+      plotModelItem.classList.toggle("is-selected", isPlotSelected);
+      plotModelItem.classList.toggle("is-open", isPlotOpen);
+      plotModelButton.classList.toggle("active", isPlotSelected);
+      plotModelButton.setAttribute("aria-pressed", String(isPlotSelected));
+      plotModelToggle.setAttribute("aria-expanded", String(isPlotOpen));
+
+      ringsModelItem.classList.toggle("is-selected", isRingsSelected);
+      ringsModelItem.classList.toggle("is-open", isRingsOpen);
+      ringsModelButton.classList.toggle("active", isRingsSelected);
+      ringsModelButton.setAttribute("aria-pressed", String(isRingsSelected));
+      ringsModelToggle.setAttribute("aria-expanded", String(isRingsOpen));
+
+      bricksModelItem.classList.toggle("is-selected", isBricksSelected);
+      bricksModelItem.classList.toggle("is-open", isBricksOpen);
+      bricksModelButton.classList.toggle("active", isBricksSelected);
+      bricksModelButton.setAttribute("aria-pressed", String(isBricksSelected));
+      bricksModelToggle.setAttribute("aria-expanded", String(isBricksOpen));
+
+      updateCounts();
+      updateMosaicStatus();
+      updateBarsStatus();
+      updateListmakerStatus();
+      updatePlotStatus();
+      updateRingsStatus();
+      updateBricksStatus();
+      updateMobileMenuLabel();
+    }
+
+    function updateMosaicStatus(isProcessing = false) {
+      const copy = translations[currentLanguage];
+
+      if (selectedModel !== "mosaic") {
+        mosaicStatus.textContent = copy.mosaicWaiting;
+        return;
+      }
+
+      if (!images.length) {
+        mosaicStatus.textContent = copy.mosaicEmpty;
+        return;
+      }
+
+      if (isProcessing) {
+        mosaicStatus.textContent = copy.mosaicProcessing;
+        return;
+      }
+
+      mosaicStatus.textContent = copy.mosaicReady;
+    }
+
+    function updateBarsStatus(isProcessing = false) {
+      const copy = translations[currentLanguage];
+
+      if (selectedModel !== "bars") {
+        barsStatus.textContent = copy.barsWaiting;
+        return;
+      }
+
+      if (!images.length) {
+        barsStatus.textContent = copy.barsEmpty;
+        return;
+      }
+
+      if (isProcessing) {
+        barsStatus.textContent = copy.barsProcessing;
+        return;
+      }
+
+      barsStatus.textContent = copy.barsReady;
+    }
+
+    function updateListmakerStatus(isProcessing = false) {
+      const copy = translations[currentLanguage];
+
+      if (selectedModel !== "listmaker") {
+        listmakerStatus.textContent = copy.listmakerWaiting;
+        return;
+      }
+
+      if (!images.length) {
+        listmakerStatus.textContent = copy.listmakerEmpty;
+        return;
+      }
+
+      if (isProcessing || images.some((image) => !image.color)) {
+        listmakerStatus.textContent = copy.listmakerProcessing;
+        return;
+      }
+
+      listmakerStatus.textContent = copy.listmakerReady;
+    }
+
+    function updatePlotStatus(isProcessing = false) {
+      const copy = translations[currentLanguage];
+
+      if (selectedModel !== "plot") {
+        plotStatus.textContent = copy.plotWaiting;
+        return;
+      }
+
+      if (!images.length) {
+        plotStatus.textContent = copy.plotEmpty;
+        return;
+      }
+
+      if (isProcessing || images.some((image) => !image.color || !image.hsb)) {
+        plotStatus.textContent = copy.plotProcessing;
+        return;
+      }
+
+      plotStatus.textContent = copy.plotReady;
+    }
+
+    function updateRingsStatus(isProcessing = false) {
+      const copy = translations[currentLanguage];
+
+      if (selectedModel !== "rings") {
+        ringsStatus.textContent = copy.ringsWaiting;
+        return;
+      }
+
+      if (!images.length) {
+        ringsStatus.textContent = copy.ringsEmpty;
+        return;
+      }
+
+      if (isProcessing || images.some((image) => !image.color || !image.hsb)) {
+        ringsStatus.textContent = copy.ringsProcessing;
+        return;
+      }
+
+      ringsStatus.textContent = copy.ringsReady;
+    }
+
+    function updateBricksStatus(isProcessing = false) {
+      const copy = translations[currentLanguage];
+
+      if (selectedModel !== "bricks") {
+        bricksStatus.textContent = copy.bricksWaiting;
+        return;
+      }
+
+      if (!images.length) {
+        bricksStatus.textContent = copy.bricksEmpty;
+        return;
+      }
+
+      if (isProcessing || images.some((image) => !image.color || !image.secondaryColor || image.primaryShare == null || image.secondaryShare == null)) {
+        bricksStatus.textContent = copy.bricksProcessing;
+        return;
+      }
+
+      bricksStatus.textContent = copy.bricksReady;
+    }
+
+    function addImages(fileList) {
+      const files = Array.from(fileList).filter((file) => file.type.startsWith("image/"));
+      if (!files.length) return;
+
+      files.forEach((file) => {
+        const image = {
+          id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+          name: file.name || "image",
+          url: URL.createObjectURL(file),
+          color: null,
+          hsl: null,
+          hsb: null,
+          hex: null,
+          secondaryColor: null,
+          primaryShare: null,
+          secondaryShare: null,
+          width: null,
+          height: null,
+          aspectRatio: 1
+        };
+
+        images.push(image);
+        albumGrid.appendChild(createThumb(image));
+        extractDominantColor(image);
+      });
+
+      fileInput.value = "";
+      updateLayoutState();
+
+      if (selectedModel === "mosaic") {
+        renderDominantMosaic();
+      }
+
+      if (selectedModel === "bars") {
+        renderDominantBars();
+      }
+
+      if (selectedModel === "listmaker") {
+        renderListmaker();
+      }
+
+      if (selectedModel === "plot") {
+        renderPlot();
+      }
+
+      if (selectedModel === "rings") {
+        renderRings();
+      }
+
+      if (selectedModel === "bricks") {
+        renderBricks();
+      }
+
+      isMobileMenuOpen = false;
+      updateMobileMenuLabel();
+    }
+
+    function createThumb(image) {
+      const card = document.createElement("article");
+      card.className = "thumb-card";
+      card.dataset.imageId = image.id;
+
+      const removeButton = document.createElement("button");
+      removeButton.className = "thumb-remove";
+      removeButton.type = "button";
+      removeButton.dataset.removeButton = "true";
+      removeButton.setAttribute("aria-label", translations[currentLanguage].removeImage);
+      removeButton.setAttribute("title", translations[currentLanguage].removeImage);
+      removeButton.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+
+      removeButton.addEventListener("click", () => removeImage(image.id));
+
+      const img = document.createElement("img");
+      img.src = image.url;
+      img.alt = image.name;
+      img.loading = "lazy";
+
+      const caption = document.createElement("span");
+      caption.className = "thumb-caption";
+      caption.textContent = image.name;
+
+      card.append(removeButton, img, caption);
+      return card;
+    }
+
+    function extractDominantColor(image) {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const paletteData = extractPaletteData(img);
+          const primary = paletteData.primaryColor;
+          const secondary = paletteData.secondaryColor;
+
+          image.color = primary;
+          image.hsl = rgbToHsl(primary[0], primary[1], primary[2]);
+          image.hsb = rgbToHsb(primary[0], primary[1], primary[2]);
+          image.hex = rgbToHex(primary[0], primary[1], primary[2]);
+          image.secondaryColor = secondary;
+          image.primaryShare = paletteData.primaryShare;
+          image.secondaryShare = paletteData.secondaryShare;
+          image.width = img.naturalWidth || img.width || 1;
+          image.height = img.naturalHeight || img.height || 1;
+          image.aspectRatio = image.width / image.height;
+
+          if (selectedModel === "mosaic") {
+            renderDominantMosaic();
+          } else if (selectedModel === "bars") {
+            renderDominantBars();
+          } else if (selectedModel === "listmaker") {
+            renderListmaker();
+          } else if (selectedModel === "plot") {
+            renderPlot();
+          } else if (selectedModel === "rings") {
+            renderRings();
+          } else if (selectedModel === "bricks") {
+            renderBricks();
+          } else {
+            updateCounts();
+          }
+        } catch (error) {
+          console.error("ColorThief could not extract a color:", error);
+        }
+      };
+
+      img.onerror = () => {
+        console.error("Could not load image for ColorThief:", image.name);
+      };
+
+      /*
+        ColorThief reads the already available local object URL.
+        This URL remains active until the image is removed from the album.
+      */
+      img.src = image.url;
+    }
+
+    function extractPaletteData(img) {
+      let palette = [];
+
+      try {
+        palette = colorThief.getPalette(img, 5) || [];
+      } catch (error) {
+        palette = [];
+      }
+
+      if (!palette.length) {
+        palette = [colorThief.getColor(img, 10)];
+      }
+
+      if (palette.length === 1) {
+        palette.push([...palette[0]]);
+      }
+
+      const counts = estimatePaletteCounts(img, palette);
+      const ranked = counts.map((count, index) => ({ count, index })).sort((a, b) => b.count - a.count);
+      const firstIndex = ranked[0]?.index ?? 0;
+      const secondIndex = ranked[1]?.index ?? Math.min(1, palette.length - 1);
+      const firstCount = ranked[0]?.count ?? 1;
+      const secondCount = ranked[1]?.count ?? 0;
+      const total = Math.max(1, firstCount + secondCount);
+
+      return {
+        primaryColor: palette[firstIndex],
+        secondaryColor: palette[secondIndex] || palette[firstIndex],
+        primaryShare: firstCount / total,
+        secondaryShare: secondCount / total
+      };
+    }
+
+    function estimatePaletteCounts(img, palette) {
+      const sampleCanvas = document.createElement("canvas");
+      const sampleContext = sampleCanvas.getContext("2d", { willReadFrequently: true });
+      const maxSide = 96;
+      const scale = Math.min(1, maxSide / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height, 1));
+      const width = Math.max(1, Math.round((img.naturalWidth || img.width || 1) * scale));
+      const height = Math.max(1, Math.round((img.naturalHeight || img.height || 1) * scale));
+      sampleCanvas.width = width;
+      sampleCanvas.height = height;
+      sampleContext.drawImage(img, 0, 0, width, height);
+
+      const { data } = sampleContext.getImageData(0, 0, width, height);
+      const counts = new Array(palette.length).fill(0);
+
+      for (let index = 0; index < data.length; index += 4) {
+        if (data[index + 3] < 64) continue;
+        const pixel = [data[index], data[index + 1], data[index + 2]];
+        let bestIndex = 0;
+        let bestDistance = Infinity;
+
+        palette.forEach((color, paletteIndex) => {
+          const distance = colorDistanceSquared(pixel, color);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestIndex = paletteIndex;
+          }
+        });
+
+        counts[bestIndex] += 1;
+      }
+
+      return counts;
+    }
+
+    function colorDistanceSquared(a, b) {
+      return ((a[0] - b[0]) ** 2) + ((a[1] - b[1]) ** 2) + ((a[2] - b[2]) ** 2);
+    }
+
+    function sortedImagesWithColors(mode = sortMode) {
+      const colorImages = images.filter((image) => image.color && image.hsl);
+
+      if (mode === "original") {
+        return colorImages;
+      }
+
+      return colorImages
+        .slice()
+        .sort((a, b) => {
+          if (mode === "saturation") return b.hsl.s - a.hsl.s || a.hsl.h - b.hsl.h;
+          if (mode === "brightness") return (b.hsb?.b ?? b.hsl.l) - (a.hsb?.b ?? a.hsl.l) || a.hsl.h - b.hsl.h;
+          return a.hsl.h - b.hsl.h || b.hsl.s - a.hsl.s || b.hsl.l - a.hsl.l;
+        });
+    }
+
+    function renderDominantMosaic() {
+      const colorImages = sortedImagesWithColors(sortMode);
+      const gridSize = Math.max(1, Math.ceil(Math.sqrt(colorImages.length)));
+
+      dominantMosaic.innerHTML = "";
+      dominantMosaic.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+      dominantMosaic.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+
+      colorImages.forEach((image) => {
+        const cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "dominant-color-cell";
+        cell.dataset.previewImageId = image.id;
+        cell.title = image.name;
+        cell.setAttribute("aria-label", image.name);
+        cell.style.backgroundColor = `rgb(${image.color[0]}, ${image.color[1]}, ${image.color[2]})`;
+
+        if (image.id === selectedPreviewId) {
+          cell.classList.add("is-selected");
+        }
+
+        cell.addEventListener("click", (event) => {
+          event.stopPropagation();
+          selectedPreviewId = image.id;
+          updateMosaicPreview();
+          highlightSelectedMosaicCell();
+        });
+
+        dominantMosaic.appendChild(cell);
+      });
+
+      updateCounts();
+      updateMosaicStatus();
+      updateBarsStatus();
+      updateListmakerStatus();
+      updateMosaicPreview();
+      updateBarsPreview();
+      renderListmaker();
+    }
+
+    function highlightSelectedMosaicCell() {
+      dominantMosaic.querySelectorAll(".dominant-color-cell").forEach((cell) => {
+        cell.classList.toggle("is-selected", cell.dataset.previewImageId === selectedPreviewId);
+      });
+    }
+
+    function updateMosaicPreview() {
+      const image = images.find((item) => item.id === selectedPreviewId);
+
+      if (!image || selectedModel !== "mosaic") {
+        mosaicPreview.classList.remove("is-visible");
+        mosaicPreviewImage.removeAttribute("src");
+        mosaicPreviewImage.alt = "";
+        mosaicPreviewTitle.textContent = "";
+        mosaicPreviewColor.textContent = "";
+        return;
+      }
+
+      mosaicPreview.classList.add("is-visible");
+      mosaicPreviewImage.src = image.url;
+      mosaicPreviewImage.alt = image.name;
+      mosaicPreviewTitle.textContent = image.name;
+
+      if (image.color) {
+        const copy = translations[currentLanguage];
+        mosaicPreviewColor.textContent = copy.previewColor
+          .replace("{r}", image.color[0])
+          .replace("{g}", image.color[1])
+          .replace("{b}", image.color[2]);
+      } else {
+        mosaicPreviewColor.textContent = "";
+      }
+    }
+
+    function renderDominantBars() {
+      const colorImages = sortedImagesWithColors(barsSortMode);
+
+      dominantBars.innerHTML = "";
+
+      colorImages.forEach((image) => {
+        const bar = document.createElement("button");
+        bar.type = "button";
+        bar.className = "dominant-bar-cell";
+        bar.dataset.previewImageId = image.id;
+        bar.title = image.name;
+        bar.setAttribute("aria-label", image.name);
+        bar.style.backgroundColor = `rgb(${image.color[0]}, ${image.color[1]}, ${image.color[2]})`;
+
+        if (image.id === selectedPreviewId) {
+          bar.classList.add("is-selected");
+        }
+
+        bar.addEventListener("click", (event) => {
+          event.stopPropagation();
+          selectedPreviewId = image.id;
+          updateBarsPreview();
+          highlightSelectedBarsCell();
+        });
+
+        dominantBars.appendChild(bar);
+      });
+
+      updateCounts();
+      updateBarsStatus();
+      updateBarsPreview();
+    }
+
+    function highlightSelectedBarsCell() {
+      dominantBars.querySelectorAll(".dominant-bar-cell").forEach((cell) => {
+        cell.classList.toggle("is-selected", cell.dataset.previewImageId === selectedPreviewId);
+      });
+    }
+
+    function updateBarsPreview() {
+      const image = images.find((item) => item.id === selectedPreviewId);
+
+      if (!image || selectedModel !== "bars") {
+        barsPreview.classList.remove("is-visible");
+        barsPreviewImage.removeAttribute("src");
+        barsPreviewImage.alt = "";
+        barsPreviewTitle.textContent = "";
+        barsPreviewColor.textContent = "";
+        return;
+      }
+
+      barsPreview.classList.add("is-visible");
+      barsPreviewImage.src = image.url;
+      barsPreviewImage.alt = image.name;
+      barsPreviewTitle.textContent = image.name;
+
+      if (image.color) {
+        const copy = translations[currentLanguage];
+        barsPreviewColor.textContent = copy.previewColor
+          .replace("{r}", image.color[0])
+          .replace("{g}", image.color[1])
+          .replace("{b}", image.color[2]);
+      } else {
+        barsPreviewColor.textContent = "";
+      }
+    }
+
+    function renderListmaker() {
+      listmakerBody.innerHTML = "";
+
+      images.forEach((image) => {
+        const row = document.createElement("tr");
+        const data = colorDataForImage(image);
+
+        const thumbnailCell = document.createElement("td");
+        const thumbnail = document.createElement("img");
+        thumbnail.className = "listmaker-thumb";
+        thumbnail.src = image.url;
+        thumbnail.alt = image.name;
+        thumbnail.loading = "lazy";
+        thumbnailCell.appendChild(thumbnail);
+        row.appendChild(thumbnailCell);
+
+        const colorCell = document.createElement("td");
+        const swatch = document.createElement("span");
+        swatch.className = "listmaker-swatch";
+        swatch.style.backgroundColor = data.rgbCss;
+        swatch.title = data.hex;
+        colorCell.appendChild(swatch);
+        row.appendChild(colorCell);
+
+        appendTextCell(row, data.rgbText);
+        appendTextCell(row, data.hslText);
+        appendTextCell(row, data.hex);
+        appendTextCell(row, image.name, "listmaker-filename");
+        appendTextCell(row, data.red);
+        appendTextCell(row, data.green);
+        appendTextCell(row, data.blue);
+        appendTextCell(row, data.hue);
+        appendTextCell(row, data.sat);
+        appendTextCell(row, data.bri);
+
+        listmakerBody.appendChild(row);
+      });
+
+      updateCounts();
+      updateListmakerStatus();
+    }
+
+    function appendTextCell(row, value, className = "") {
+      const cell = document.createElement("td");
+      if (className) cell.className = className;
+      cell.textContent = value;
+      row.appendChild(cell);
+    }
+
+    function colorDataForImage(image) {
+      if (!image.color || !image.hsl || !image.hsb) {
+        return {
+          red: "—",
+          green: "—",
+          blue: "—",
+          hue: "—",
+          sat: "—",
+          bri: "—",
+          hex: "—",
+          rgbText: "—",
+          hslText: "—",
+          rgbCss: "transparent"
+        };
+      }
+
+      const [r, g, b] = image.color;
+      const hue = Math.round(image.hsb.h);
+      const sat = Math.round(image.hsb.s * 100);
+      const bri = Math.round(image.hsb.b * 100);
+      const hslHue = Math.round(image.hsl.h);
+      const hslSat = Math.round(image.hsl.s * 100);
+      const hslLight = Math.round(image.hsl.l * 100);
+
+      return {
+        red: r,
+        green: g,
+        blue: b,
+        hue,
+        sat,
+        bri,
+        hex: image.hex,
+        rgbText: `rgb(${r}, ${g}, ${b})`,
+        hslText: `hsl(${hslHue}, ${hslSat}%, ${hslLight}%)`,
+        rgbCss: `rgb(${r}, ${g}, ${b})`
+      };
+    }
+
+    function renderPlot() {
+      const plottedImages = images.filter((image) => image.color && image.hsb);
+      plotItems.innerHTML = "";
+
+      plottedImages.forEach((image) => {
+        const point = document.createElement("button");
+        const yValue = plotYAxisMode === "saturation" ? image.hsb.s * 100 : image.hsb.b * 100;
+        const xValue = Math.max(0, Math.min(100, (image.hsb.h / 360) * 100));
+        const visualSize = plotVisualDimensions(image, plotPointSize);
+
+        point.type = "button";
+        point.className = "plot-point";
+        point.dataset.previewImageId = image.id;
+        point.title = image.name;
+        point.setAttribute("aria-label", image.name);
+        point.style.left = `${xValue}%`;
+        point.style.bottom = `${Math.max(0, Math.min(100, yValue))}%`;
+        point.style.width = `${visualSize.width}px`;
+        point.style.height = `${visualSize.height}px`;
+
+        if (image.id === selectedPreviewId) {
+          point.classList.add("is-selected");
+        }
+
+        if (plotShowImages) {
+          const img = document.createElement("img");
+          img.className = "plot-visual";
+          img.src = image.url;
+          img.alt = image.name;
+          img.loading = "lazy";
+          point.appendChild(img);
+        } else {
+          const shape = document.createElement("span");
+          shape.className = "plot-visual plot-color-shape";
+          shape.style.backgroundColor = `rgb(${image.color[0]}, ${image.color[1]}, ${image.color[2]})`;
+          point.appendChild(shape);
+        }
+
+        point.addEventListener("click", (event) => {
+          event.stopPropagation();
+          selectedPreviewId = image.id;
+          updatePlotPreview();
+          highlightSelectedPlotPoint();
+        });
+
+        plotItems.appendChild(point);
+      });
+
+      updateCounts();
+      updatePlotStatus();
+      updatePlotPreview();
+    }
+
+    function plotVisualDimensions(image, maxSize) {
+      const aspectRatio = Math.max(0.08, image.aspectRatio || 1);
+
+      if (aspectRatio >= 1) {
+        return {
+          width: maxSize,
+          height: Math.max(8, maxSize / aspectRatio)
+        };
+      }
+
+      return {
+        width: Math.max(8, maxSize * aspectRatio),
+        height: maxSize
+      };
+    }
+
+    function highlightSelectedPlotPoint() {
+      plotItems.querySelectorAll(".plot-point").forEach((point) => {
+        point.classList.toggle("is-selected", point.dataset.previewImageId === selectedPreviewId);
+      });
+    }
+
+    function updatePlotPreview() {
+      const image = images.find((item) => item.id === selectedPreviewId);
+
+      if (!image || selectedModel !== "plot") {
+        plotPreview.classList.remove("is-visible");
+        plotPreviewImage.removeAttribute("src");
+        plotPreviewImage.alt = "";
+        plotPreviewTitle.textContent = "";
+        plotPreviewColor.textContent = "";
+        return;
+      }
+
+      plotPreview.classList.add("is-visible");
+      plotPreviewImage.src = image.url;
+      plotPreviewImage.alt = image.name;
+      plotPreviewTitle.textContent = image.name;
+
+      if (image.color) {
+        const copy = translations[currentLanguage];
+        plotPreviewColor.textContent = copy.previewColor
+          .replace("{r}", image.color[0])
+          .replace("{g}", image.color[1])
+          .replace("{b}", image.color[2]);
+      } else {
+        plotPreviewColor.textContent = "";
+      }
+    }
+
+    function ringGeometry(count) {
+      if (!count) {
+        return { minRadius: 0, maxRadius: 0, step: 0, strokeWidth: 0 };
+      }
+
+      /*
+        Fill a safe radial band from 38 to 462. Each stroke is as wide as
+        the distance to the next radius, with a tiny overlap to prevent
+        anti-aliased gaps. The outer edge remains fully inside the canvas.
+      */
+      const innerRadius = 38;
+      const outerRadius = 462;
+      const step = (outerRadius - innerRadius) / count;
+      const minRadius = innerRadius + step / 2;
+      const strokeWidth = step + 0.6;
+
+      return {
+        minRadius,
+        maxRadius: outerRadius,
+        step,
+        strokeWidth
+      };
+    }
+
+    function renderRings() {
+      const ringImages = sortedImagesWithColors(ringsSortMode);
+      const geometry = ringGeometry(ringImages.length);
+
+      ringsSvg.innerHTML = "";
+      ringsSvg.setAttribute("viewBox", "0 0 1000 1000");
+
+      ringImages.forEach((image, index) => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        const radius = geometry.minRadius + geometry.step * index;
+
+        circle.classList.add("ring-circle");
+        circle.dataset.previewImageId = image.id;
+        circle.setAttribute("cx", "500");
+        circle.setAttribute("cy", "500");
+        circle.setAttribute("r", String(radius));
+        circle.setAttribute("stroke", `rgb(${image.color[0]}, ${image.color[1]}, ${image.color[2]})`);
+        circle.setAttribute("stroke-width", String(geometry.strokeWidth));
+        circle.setAttribute("role", "button");
+        circle.setAttribute("tabindex", "0");
+        circle.setAttribute("aria-label", image.name);
+
+        if (image.id === selectedPreviewId) {
+          circle.classList.add("is-selected");
+        }
+
+        circle.addEventListener("click", (event) => {
+          event.stopPropagation();
+          selectedPreviewId = image.id;
+          updateRingsPreview();
+          highlightSelectedRing();
+        });
+
+        circle.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            selectedPreviewId = image.id;
+            updateRingsPreview();
+            highlightSelectedRing();
+          }
+        });
+
+        ringsSvg.appendChild(circle);
+      });
+
+      updateCounts();
+      updateRingsStatus();
+      updateRingsPreview();
+    }
+
+    function highlightSelectedRing() {
+      ringsSvg.querySelectorAll(".ring-circle").forEach((ring) => {
+        ring.classList.toggle("is-selected", ring.dataset.previewImageId === selectedPreviewId);
+      });
+    }
+
+    function updateRingsPreview() {
+      const image = images.find((item) => item.id === selectedPreviewId);
+
+      if (!image || selectedModel !== "rings") {
+        ringsPreview.classList.remove("is-visible");
+        ringsPreviewImage.removeAttribute("src");
+        ringsPreviewImage.alt = "";
+        ringsPreviewTitle.textContent = "";
+        ringsPreviewColor.textContent = "";
+        return;
+      }
+
+      ringsPreview.classList.add("is-visible");
+      ringsPreviewImage.src = image.url;
+      ringsPreviewImage.alt = image.name;
+      ringsPreviewTitle.textContent = image.name;
+
+      if (image.color) {
+        const copy = translations[currentLanguage];
+        ringsPreviewColor.textContent = copy.previewColor
+          .replace("{r}", image.color[0])
+          .replace("{g}", image.color[1])
+          .replace("{b}", image.color[2]);
+      } else {
+        ringsPreviewColor.textContent = "";
+      }
+    }
+
+    function sortedBrickImages() {
+      const brickImages = images
+        .filter((image) => image.color && image.secondaryColor && image.primaryShare != null && image.secondaryShare != null)
+        .slice();
+
+      if (bricksSortMode === "primary") {
+        return brickImages.sort((a, b) => (b.primaryShare ?? 0) - (a.primaryShare ?? 0));
+      }
+
+      if (bricksSortMode === "secondary") {
+        return brickImages.sort((a, b) => (b.secondaryShare ?? 0) - (a.secondaryShare ?? 0));
+      }
+
+      return brickImages;
+    }
+
+    function renderBricks() {
+      const brickImages = sortedBrickImages();
+      const layout = bricksLayout(brickImages.length);
+
+      bricksWall.innerHTML = "";
+      bricksWall.style.setProperty("--brick-gap", `${layout.gap}px`);
+      bricksWall.style.gridTemplateColumns = `repeat(${layout.columns}, ${layout.cellSize}px)`;
+      bricksWall.style.gridTemplateRows = `repeat(${layout.rows}, ${layout.cellSize}px)`;
+
+      brickImages.forEach((image) => {
+        const brick = document.createElement("button");
+        const topPart = document.createElement("span");
+        const bottomPart = document.createElement("span");
+        const safeTotal = Math.max(0.0001, (image.primaryShare ?? 0) + (image.secondaryShare ?? 0));
+        const topRatio = Math.max(0.02, Math.min(0.98, (image.primaryShare ?? 0.5) / safeTotal));
+        const bottomRatio = Math.max(0.02, 1 - topRatio);
+
+        brick.type = "button";
+        brick.className = "brick-cell";
+        brick.dataset.previewImageId = image.id;
+        brick.title = image.name;
+        brick.setAttribute("aria-label", image.name);
+
+        if (image.id === selectedPreviewId) {
+          brick.classList.add("is-selected");
+        }
+
+        topPart.className = "brick-part";
+        bottomPart.className = "brick-part";
+        topPart.style.backgroundColor = `rgb(${image.color[0]}, ${image.color[1]}, ${image.color[2]})`;
+        bottomPart.style.backgroundColor = `rgb(${image.secondaryColor[0]}, ${image.secondaryColor[1]}, ${image.secondaryColor[2]})`;
+        topPart.style.flexBasis = `${topRatio * 100}%`;
+        topPart.style.flexGrow = String(topRatio);
+        topPart.style.flexShrink = "0";
+        bottomPart.style.flexBasis = `${bottomRatio * 100}%`;
+        bottomPart.style.flexGrow = String(bottomRatio);
+        bottomPart.style.flexShrink = "0";
+
+        brick.append(topPart, bottomPart);
+
+        brick.addEventListener("click", (event) => {
+          event.stopPropagation();
+          selectedPreviewId = image.id;
+          updateBricksPreview();
+          highlightSelectedBrick();
+        });
+
+        bricksWall.appendChild(brick);
+      });
+
+      updateCounts();
+      updateBricksStatus();
+      updateBricksPreview();
+    }
+
+    function bricksLayout(count, stageWidth = bricksWall.clientWidth || 1800, stageHeight = bricksWall.clientHeight || 1200, gap = 2) {
+      if (!count) {
+        return { columns: 1, rows: 1, cellSize: Math.min(stageWidth, stageHeight), gap };
+      }
+
+      let best = null;
+
+      for (let columns = 1; columns <= count; columns += 1) {
+        const rows = Math.ceil(count / columns);
+        const availableWidth = stageWidth - gap * (columns - 1);
+        const availableHeight = stageHeight - gap * (rows - 1);
+        const cellSize = Math.floor(Math.min(availableWidth / columns, availableHeight / rows));
+
+        if (cellSize <= 0) continue;
+
+        if (!best || cellSize > best.cellSize) {
+          best = { columns, rows, cellSize, gap };
+        }
+      }
+
+      return best || { columns: count, rows: 1, cellSize: 1, gap };
+    }
+
+    function highlightSelectedBrick() {
+      bricksWall.querySelectorAll(".brick-cell").forEach((brick) => {
+        brick.classList.toggle("is-selected", brick.dataset.previewImageId === selectedPreviewId);
+      });
+    }
+
+    function updateBricksPreview() {
+      const image = images.find((item) => item.id === selectedPreviewId);
+
+      if (!image || selectedModel !== "bricks") {
+        bricksPreview.classList.remove("is-visible");
+        bricksPreviewImage.removeAttribute("src");
+        bricksPreviewImage.alt = "";
+        bricksPreviewTitle.textContent = "";
+        bricksPreviewColor.textContent = "";
+        return;
+      }
+
+      bricksPreview.classList.add("is-visible");
+      bricksPreviewImage.src = image.url;
+      bricksPreviewImage.alt = image.name;
+      bricksPreviewTitle.textContent = image.name;
+
+      if (image.color && image.secondaryColor) {
+        const copy = translations[currentLanguage];
+        bricksPreviewColor.textContent = copy.previewTwoColors
+          .replace("{r1}", image.color[0])
+          .replace("{g1}", image.color[1])
+          .replace("{b1}", image.color[2])
+          .replace("{r2}", image.secondaryColor[0])
+          .replace("{g2}", image.secondaryColor[1])
+          .replace("{b2}", image.secondaryColor[2]);
+      } else {
+        bricksPreviewColor.textContent = "";
+      }
+    }
+
+    function saveBricksAsPng() {
+      const brickImages = sortedBrickImages();
+      if (!brickImages.length) return;
+
+      const canvasWidth = 1800;
+      const canvasHeight = 1200;
+      const brickGap = 8;
+      const layout = bricksLayout(brickImages.length, canvasWidth, canvasHeight, brickGap);
+      const brickSize = layout.cellSize;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      const context = canvas.getContext("2d");
+      context.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      brickImages.forEach((image, index) => {
+        const column = index % layout.columns;
+        const row = Math.floor(index / layout.columns);
+        const x = column * (brickSize + brickGap);
+        const y = row * (brickSize + brickGap);
+        const safeTotal = Math.max(0.0001, (image.primaryShare ?? 0) + (image.secondaryShare ?? 0));
+        const topRatio = Math.max(0.02, Math.min(0.98, (image.primaryShare ?? 0.5) / safeTotal));
+        const topHeight = Math.round(brickSize * topRatio);
+        const bottomHeight = brickSize - topHeight;
+
+        context.fillStyle = `rgb(${image.color[0]}, ${image.color[1]}, ${image.color[2]})`;
+        context.fillRect(x, y, brickSize, topHeight);
+
+        context.fillStyle = `rgb(${image.secondaryColor[0]}, ${image.secondaryColor[1]}, ${image.secondaryColor[2]})`;
+        context.fillRect(x, y + topHeight, brickSize, bottomHeight);
+
+        context.strokeStyle = "rgba(255,255,255,0.55)";
+        context.strokeRect(x + 0.5, y + 0.5, brickSize - 1, brickSize - 1);
+      });
+
+      const link = document.createElement("a");
+      link.download = "drag-and-hue-bricks.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    function rgbToHsl(r, g, b) {
+      r /= 255;
+      g /= 255;
+      b /= 255;
+
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      let h = 0;
+      let s = 0;
+      const l = (max + min) / 2;
+
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+        switch (max) {
+          case r:
+            h = (g - b) / d + (g < b ? 6 : 0);
+            break;
+          case g:
+            h = (b - r) / d + 2;
+            break;
+          case b:
+            h = (r - g) / d + 4;
+            break;
+        }
+
+        h /= 6;
+      }
+
+      return {
+        h: h * 360,
+        s,
+        l
+      };
+    }
+
+    function rgbToHsb(r, g, b) {
+      r /= 255;
+      g /= 255;
+      b /= 255;
+
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const d = max - min;
+
+      let h = 0;
+      const s = max === 0 ? 0 : d / max;
+      const brightness = max;
+
+      if (d !== 0) {
+        switch (max) {
+          case r:
+            h = (g - b) / d + (g < b ? 6 : 0);
+            break;
+          case g:
+            h = (b - r) / d + 2;
+            break;
+          case b:
+            h = (r - g) / d + 4;
+            break;
+        }
+
+        h /= 6;
+      }
+
+      return {
+        h: h * 360,
+        s,
+        b: brightness
+      };
+    }
+
+    function rgbToHex(r, g, b) {
+      return "#" + [r, g, b]
+        .map((value) => value.toString(16).padStart(2, "0"))
+        .join("")
+        .toUpperCase();
+    }
+
+    function removeImage(id) {
+      const index = images.findIndex((image) => image.id === id);
+      if (index === -1) return;
+
+      URL.revokeObjectURL(images[index].url);
+      images.splice(index, 1);
+
+      if (selectedPreviewId === id) {
+        selectedPreviewId = null;
+      }
+
+      const card = albumGrid.querySelector(`[data-image-id="${id}"]`);
+      if (card) card.remove();
+
+      if (!images.length) {
+        selectedModel = null;
+      }
+
+      renderDominantMosaic();
+      renderDominantBars();
+      renderListmaker();
+      renderPlot();
+      renderRings();
+      renderBricks();
+      updateLayoutState();
+    }
+
+    function clearAllImages() {
+      images.forEach((image) => URL.revokeObjectURL(image.url));
+      images.length = 0;
+      albumGrid.innerHTML = "";
+      dominantMosaic.innerHTML = "";
+      dominantBars.innerHTML = "";
+      plotItems.innerHTML = "";
+      ringsSvg.innerHTML = "";
+      bricksWall.innerHTML = "";
+      listmakerBody.innerHTML = "";
+      selectedModel = null;
+      openControlsModel = null;
+      selectedPreviewId = null;
+      isMobileMenuOpen = false;
+      sortMode = "hue";
+      barsSortMode = "hue";
+      plotYAxisMode = "brightness";
+      plotPointSize = 42;
+      plotShowImages = true;
+      ringsSortMode = "original";
+      bricksSortMode = "original";
+      sortSelect.value = "hue";
+      barsSortSelect.value = "hue";
+      plotYAxisSelect.value = "brightness";
+      plotSizeSlider.value = "42";
+      plotShowImagesCheckbox.checked = true;
+      ringsSortSelect.value = "original";
+      bricksSortSelect.value = "original";
+      updateLayoutState();
+      updateMosaicPreview();
+      updateBarsPreview();
+      updatePlotPreview();
+      updateRingsPreview();
+      updateBricksPreview();
+    }
+
+    function restartModelImages() {
+      images.forEach((image) => URL.revokeObjectURL(image.url));
+      images.length = 0;
+      albumGrid.innerHTML = "";
+      dominantMosaic.innerHTML = "";
+      dominantBars.innerHTML = "";
+      plotItems.innerHTML = "";
+      ringsSvg.innerHTML = "";
+      bricksWall.innerHTML = "";
+      listmakerBody.innerHTML = "";
+      selectedPreviewId = null;
+
+      if (selectedModel === "mosaic") {
+        sortMode = "hue";
+        sortSelect.value = "hue";
+      }
+
+      if (selectedModel === "bars") {
+        barsSortMode = "hue";
+        barsSortSelect.value = "hue";
+      }
+
+      if (selectedModel === "plot") {
+        plotYAxisMode = "brightness";
+        plotPointSize = 42;
+        plotShowImages = true;
+        plotYAxisSelect.value = "brightness";
+        plotSizeSlider.value = "42";
+        plotShowImagesCheckbox.checked = true;
+      }
+
+      if (selectedModel === "rings") {
+        ringsSortMode = "original";
+        ringsSortSelect.value = "original";
+      }
+
+      if (selectedModel === "bricks") {
+        bricksSortMode = "original";
+        bricksSortSelect.value = "original";
+      }
+
+      renderDominantMosaic();
+      renderDominantBars();
+      renderListmaker();
+      renderPlot();
+      renderRings();
+      renderBricks();
+      updateLayoutState();
+      updateMosaicPreview();
+      updateBarsPreview();
+      updatePlotPreview();
+      updateRingsPreview();
+      updateBricksPreview();
+    }
+
+    function openFilePicker() {
+      fileInput.click();
+    }
+
+    function activateModel(model, isProcessing = true) {
+      selectedModel = model;
+      selectedPreviewId = null;
+
+      if (openControlsModel && openControlsModel !== model) {
+        openControlsModel = null;
+      }
+
+      updateLayoutState();
+
+      if (model === "mosaic") {
+        if (isProcessing) updateMosaicStatus(true);
+        renderDominantMosaic();
+      }
+
+      if (model === "bars") {
+        if (isProcessing) updateBarsStatus(true);
+        renderDominantBars();
+      }
+
+      if (model === "listmaker") {
+        if (isProcessing) updateListmakerStatus(true);
+        renderListmaker();
+      }
+
+      if (model === "plot") {
+        if (isProcessing) updatePlotStatus(true);
+        renderPlot();
+      }
+
+      if (model === "rings") {
+        if (isProcessing) updateRingsStatus(true);
+        renderRings();
+      }
+
+      if (model === "bricks") {
+        if (isProcessing) updateBricksStatus(true);
+        renderBricks();
+      }
+
+      updateMosaicPreview();
+      updateBarsPreview();
+      updatePlotPreview();
+      updateRingsPreview();
+      updateBricksPreview();
+      highlightSelectedMosaicCell();
+      highlightSelectedBarsCell();
+      highlightSelectedPlotPoint();
+      highlightSelectedRing();
+      highlightSelectedBrick();
+    }
+
+    function deactivateCurrentModel() {
+      selectedModel = null;
+      openControlsModel = null;
+      selectedPreviewId = null;
+      updateLayoutState();
+      updateMosaicPreview();
+      updateBarsPreview();
+      updatePlotPreview();
+      updateRingsPreview();
+      updateBricksPreview();
+      highlightSelectedMosaicCell();
+      highlightSelectedBarsCell();
+      highlightSelectedPlotPoint();
+      highlightSelectedRing();
+      highlightSelectedBrick();
+    }
+
+    function selectMosaicModel() {
+      if (selectedModel === "mosaic") {
+        deactivateCurrentModel();
+      } else {
+        activateModel("mosaic", true);
+      }
+
+      isMobileMenuOpen = false;
+      updateMobileMenuLabel();
+    }
+
+    function selectBarsModel() {
+      if (selectedModel === "bars") {
+        deactivateCurrentModel();
+      } else {
+        activateModel("bars", true);
+      }
+
+      isMobileMenuOpen = false;
+      updateMobileMenuLabel();
+    }
+
+    function selectListmakerModel() {
+      if (selectedModel === "listmaker") {
+        deactivateCurrentModel();
+      } else {
+        activateModel("listmaker", true);
+      }
+
+      isMobileMenuOpen = false;
+      updateMobileMenuLabel();
+    }
+
+    function selectPlotModel() {
+      if (selectedModel === "plot") {
+        deactivateCurrentModel();
+      } else {
+        activateModel("plot", true);
+      }
+
+      isMobileMenuOpen = false;
+      updateMobileMenuLabel();
+    }
+
+    function selectRingsModel() {
+      if (selectedModel === "rings") {
+        deactivateCurrentModel();
+      } else {
+        activateModel("rings", true);
+      }
+
+      isMobileMenuOpen = false;
+      updateMobileMenuLabel();
+    }
+
+    function selectBricksModel() {
+      if (selectedModel === "bricks") {
+        deactivateCurrentModel();
+      } else {
+        activateModel("bricks", true);
+      }
+
+      isMobileMenuOpen = false;
+      updateMobileMenuLabel();
+    }
+
+    function toggleModelControls(model) {
+      const shouldOpen = openControlsModel !== model;
+
+      if (selectedModel !== model) {
+        activateModel(model, true);
+      }
+
+      openControlsModel = shouldOpen ? model : null;
+      updateLayoutState();
+    }
+
+    function downloadListmakerCsv() {
+      const headers = [
+        "Thumbnail",
+        "Color",
+        "RGB",
+        "HSL",
+        "Hexadecimal",
+        "Filename",
+        "Red",
+        "Green",
+        "Blue",
+        "Hue",
+        "Sat",
+        "Bri"
+      ];
+
+      const rows = images.map((image) => {
+        const data = colorDataForImage(image);
+        return [
+          image.name,
+          data.hex,
+          data.rgbText,
+          data.hslText,
+          data.hex,
+          image.name,
+          data.red,
+          data.green,
+          data.blue,
+          data.hue,
+          data.sat,
+          data.bri
+        ];
+      });
+
+      const csv = [headers, ...rows]
+        .map((row) => row.map(csvEscape).join(","))
+        .join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = "drag-and-hue-listmaker.csv";
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    }
+
+    function saveMosaicAsPng() {
+      const colorImages = sortedImagesWithColors(sortMode);
+      if (!colorImages.length) return;
+
+      const gridSize = Math.max(1, Math.ceil(Math.sqrt(colorImages.length)));
+      const canvasSize = 1600;
+      const cellSize = canvasSize / gridSize;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+
+      const context = canvas.getContext("2d");
+      context.clearRect(0, 0, canvasSize, canvasSize);
+
+      colorImages.forEach((image, index) => {
+        const column = index % gridSize;
+        const row = Math.floor(index / gridSize);
+        context.fillStyle = `rgb(${image.color[0]}, ${image.color[1]}, ${image.color[2]})`;
+        context.fillRect(column * cellSize, row * cellSize, cellSize, cellSize);
+      });
+
+      const link = document.createElement("a");
+      link.download = "drag-and-hue-mosaic.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    function saveBarsAsPng() {
+      const colorImages = sortedImagesWithColors(barsSortMode);
+      if (!colorImages.length) return;
+
+      const canvasWidth = 1800;
+      const canvasHeight = 1200;
+      const canvas = document.createElement("canvas");
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      const context = canvas.getContext("2d");
+      context.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      colorImages.forEach((image, index) => {
+        const xStart = Math.floor((index * canvasWidth) / colorImages.length);
+        const xEnd = Math.floor(((index + 1) * canvasWidth) / colorImages.length);
+        context.fillStyle = `rgb(${image.color[0]}, ${image.color[1]}, ${image.color[2]})`;
+        context.fillRect(xStart, 0, xEnd - xStart, canvasHeight);
+      });
+
+      const link = document.createElement("a");
+      link.download = "drag-and-hue-bars.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    function savePlotAsPng() {
+      const plottedImages = images.filter((image) => image.color && image.hsb);
+      if (!plottedImages.length) return;
+
+      const canvasWidth = 1800;
+      const canvasHeight = 1200;
+      const axisThickness = 3;
+      const fieldInset = 48;
+      const plotAreaX = fieldInset + axisThickness;
+      const plotAreaY = fieldInset;
+      const plotAreaWidth = canvasWidth - fieldInset * 2 - axisThickness;
+      const plotAreaHeight = canvasHeight - fieldInset * 2 - axisThickness;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      const context = canvas.getContext("2d");
+      const styles = getComputedStyle(document.documentElement);
+      const panelBg = styles.getPropertyValue("--panel-bg").trim() || "#ffffff";
+      const border = styles.getPropertyValue("--border").trim() || "#cccccc";
+      const isDark = body.dataset.theme === "dark";
+      const strokeColor = isDark ? "rgba(23, 25, 31, 0.72)" : "rgba(255, 255, 255, 0.72)";
+
+      context.clearRect(0, 0, canvasWidth, canvasHeight);
+      context.fillStyle = panelBg;
+      context.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      context.strokeStyle = "rgba(120, 120, 120, 0.08)";
+      context.lineWidth = 1;
+      for (let x = 0; x < canvasWidth + canvasHeight; x += 20) {
+        context.beginPath();
+        context.moveTo(x, 0);
+        context.lineTo(x - canvasHeight, canvasHeight);
+        context.stroke();
+      }
+
+      context.strokeStyle = border;
+      context.strokeRect(0.5, 0.5, canvasWidth - 1, canvasHeight - 1);
+
+      const yGradient = context.createLinearGradient(fieldInset, canvasHeight - fieldInset, fieldInset, fieldInset);
+      yGradient.addColorStop(0, "#000000");
+      yGradient.addColorStop(1, "#FFFFFF");
+      context.fillStyle = yGradient;
+      context.fillRect(fieldInset, fieldInset, axisThickness, plotAreaHeight + axisThickness);
+
+      const xGradient = context.createLinearGradient(plotAreaX, 0, plotAreaX + plotAreaWidth, 0);
+      xGradient.addColorStop(0, "hsl(0, 100%, 50%)");
+      xGradient.addColorStop(1 / 6, "hsl(60, 100%, 50%)");
+      xGradient.addColorStop(2 / 6, "hsl(120, 100%, 50%)");
+      xGradient.addColorStop(3 / 6, "hsl(180, 100%, 50%)");
+      xGradient.addColorStop(4 / 6, "hsl(240, 100%, 50%)");
+      xGradient.addColorStop(5 / 6, "hsl(300, 100%, 50%)");
+      xGradient.addColorStop(1, "hsl(360, 100%, 50%)");
+      context.fillStyle = xGradient;
+      context.fillRect(plotAreaX, fieldInset + plotAreaHeight, plotAreaWidth, axisThickness);
+
+      const drawTasks = plottedImages.map((image) => {
+        return new Promise((resolve) => {
+          const xPercent = Math.max(0, Math.min(1, image.hsb.h / 360));
+          const yMetric = plotYAxisMode === "saturation" ? image.hsb.s : image.hsb.b;
+          const yPercent = Math.max(0, Math.min(1, yMetric));
+          const visualSize = plotVisualDimensions(image, plotPointSize);
+          const centerX = plotAreaX + xPercent * plotAreaWidth;
+          const centerY = fieldInset + (1 - yPercent) * plotAreaHeight;
+          const left = centerX - visualSize.width / 2;
+          const top = centerY - visualSize.height / 2;
+
+          const drawShape = () => {
+            context.fillStyle = `rgb(${image.color[0]}, ${image.color[1]}, ${image.color[2]})`;
+            context.fillRect(left, top, visualSize.width, visualSize.height);
+            context.strokeStyle = strokeColor;
+            context.lineWidth = 2;
+            context.strokeRect(left, top, visualSize.width, visualSize.height);
+            resolve();
+          };
+
+          if (!plotShowImages) {
+            drawShape();
+            return;
+          }
+
+          const img = new Image();
+          img.onload = () => {
+            context.save();
+            context.beginPath();
+            context.rect(left, top, visualSize.width, visualSize.height);
+            context.clip();
+
+            const scale = Math.max(visualSize.width / img.width, visualSize.height / img.height);
+            const drawWidth = img.width * scale;
+            const drawHeight = img.height * scale;
+            const drawX = left + (visualSize.width - drawWidth) / 2;
+            const drawY = top + (visualSize.height - drawHeight) / 2;
+
+            context.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+            context.restore();
+
+            context.strokeStyle = strokeColor;
+            context.lineWidth = 2;
+            context.strokeRect(left, top, visualSize.width, visualSize.height);
+            resolve();
+          };
+          img.onerror = () => {
+            drawShape();
+          };
+          img.src = image.url;
+        });
+      });
+
+      Promise.all(drawTasks).then(() => {
+        const link = document.createElement("a");
+        link.download = "drag-and-hue-plot.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+
+    function saveRingsAsPng() {
+      const ringImages = sortedImagesWithColors(ringsSortMode);
+      if (!ringImages.length) return;
+
+      const canvasSize = 1600;
+      const scale = canvasSize / 1000;
+      const geometry = ringGeometry(ringImages.length);
+      const canvas = document.createElement("canvas");
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+
+      const context = canvas.getContext("2d");
+      const styles = getComputedStyle(document.documentElement);
+      const panelBg = styles.getPropertyValue("--panel-bg").trim() || "#ffffff";
+      const border = styles.getPropertyValue("--border").trim() || "#cccccc";
+
+      context.clearRect(0, 0, canvasSize, canvasSize);
+      context.fillStyle = panelBg;
+      context.fillRect(0, 0, canvasSize, canvasSize);
+
+      context.strokeStyle = "rgba(120, 120, 120, 0.08)";
+      context.lineWidth = 1;
+      for (let x = 0; x < canvasSize * 2; x += 20 * scale) {
+        context.beginPath();
+        context.moveTo(x, 0);
+        context.lineTo(x - canvasSize, canvasSize);
+        context.stroke();
+      }
+
+      context.strokeStyle = border;
+      context.strokeRect(0.5, 0.5, canvasSize - 1, canvasSize - 1);
+
+      context.lineCap = "round";
+
+      ringImages.forEach((image, index) => {
+        const radius = (geometry.minRadius + geometry.step * index) * scale;
+        context.beginPath();
+        context.arc(canvasSize / 2, canvasSize / 2, radius, 0, Math.PI * 2);
+        context.strokeStyle = `rgb(${image.color[0]}, ${image.color[1]}, ${image.color[2]})`;
+        context.lineWidth = geometry.strokeWidth * scale;
+        context.stroke();
+      });
+
+      const link = document.createElement("a");
+      link.download = "drag-and-hue-rings.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    themeToggle.addEventListener("click", () => {
+      body.dataset.theme = body.dataset.theme === "dark" ? "light" : "dark";
+      updateThemeLabel();
+    });
+
+    langButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        currentLanguage = button.dataset.langButton;
+        translate();
+      });
+    });
+
+    selectButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openFilePicker();
+    });
+
+    dropZone.addEventListener("click", openFilePicker);
+
+    dropZone.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openFilePicker();
+      }
+    });
+
+    fileInput.addEventListener("change", (event) => {
+      addImages(event.target.files);
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.add("is-dragging");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.remove("is-dragging");
+      });
+    });
+
+    dropZone.addEventListener("drop", (event) => {
+      addImages(event.dataTransfer.files);
+    });
+
+    mobileMenuToggle.addEventListener("click", (event) => {
+      event.stopPropagation();
+      isMobileMenuOpen = !isMobileMenuOpen;
+      updateMobileMenuLabel();
+    });
+
+    mosaicModelButton.addEventListener("click", selectMosaicModel);
+    barsModelButton.addEventListener("click", selectBarsModel);
+    listmakerModelButton.addEventListener("click", selectListmakerModel);
+    plotModelButton.addEventListener("click", selectPlotModel);
+    ringsModelButton.addEventListener("click", selectRingsModel);
+    bricksModelButton.addEventListener("click", selectBricksModel);
+
+    mosaicModelToggle.addEventListener("click", () => toggleModelControls("mosaic"));
+    barsModelToggle.addEventListener("click", () => toggleModelControls("bars"));
+    listmakerModelToggle.addEventListener("click", () => toggleModelControls("listmaker"));
+    plotModelToggle.addEventListener("click", () => toggleModelControls("plot"));
+    ringsModelToggle.addEventListener("click", () => toggleModelControls("rings"));
+    bricksModelToggle.addEventListener("click", () => toggleModelControls("bricks"));
+
+    mosaicPreview.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    barsPreview.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    plotPreview.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    ringsPreview.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    bricksPreview.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!selectedPreviewId) return;
+      if (
+        mosaicPreview.contains(event.target) ||
+        barsPreview.contains(event.target) ||
+        plotPreview.contains(event.target) ||
+        ringsPreview.contains(event.target) ||
+        bricksPreview.contains(event.target)
+      ) return;
+
+      selectedPreviewId = null;
+      updateMosaicPreview();
+      updateBarsPreview();
+      updatePlotPreview();
+      updateRingsPreview();
+      updateBricksPreview();
+      highlightSelectedMosaicCell();
+      highlightSelectedBarsCell();
+      highlightSelectedPlotPoint();
+      highlightSelectedRing();
+      highlightSelectedBrick();
+    });
+
+    sortSelect.addEventListener("change", (event) => {
+      sortMode = event.target.value;
+      renderDominantMosaic();
+    });
+
+    barsSortSelect.addEventListener("change", (event) => {
+      barsSortMode = event.target.value;
+      renderDominantBars();
+    });
+
+    plotYAxisSelect.addEventListener("change", (event) => {
+      plotYAxisMode = event.target.value;
+      renderPlot();
+    });
+
+    plotSizeSlider.addEventListener("input", (event) => {
+      plotPointSize = Number(event.target.value);
+      renderPlot();
+    });
+
+    plotShowImagesCheckbox.addEventListener("change", (event) => {
+      plotShowImages = event.target.checked;
+      renderPlot();
+    });
+
+    ringsSortSelect.addEventListener("change", (event) => {
+      ringsSortMode = event.target.value;
+      renderRings();
+    });
+
+    bricksSortSelect.addEventListener("change", (event) => {
+      bricksSortMode = event.target.value;
+      renderBricks();
+    });
+
+    saveMosaicButton.addEventListener("click", saveMosaicAsPng);
+    saveBarsButton.addEventListener("click", saveBarsAsPng);
+    savePlotButton.addEventListener("click", savePlotAsPng);
+    saveRingsButton.addEventListener("click", saveRingsAsPng);
+    saveBricksButton.addEventListener("click", saveBricksAsPng);
+    downloadCsvButton.addEventListener("click", downloadListmakerCsv);
+    restartAlbumButton.addEventListener("click", clearAllImages);
+    restartMosaicButton.addEventListener("click", restartModelImages);
+    restartBarsButton.addEventListener("click", restartModelImages);
+    restartListmakerButton.addEventListener("click", restartModelImages);
+    restartPlotButton.addEventListener("click", restartModelImages);
+    restartRingsButton.addEventListener("click", restartModelImages);
+    restartBricksButton.addEventListener("click", restartModelImages);
+
+    window.addEventListener("resize", () => {
+      if (selectedModel === "bricks") {
+        renderBricks();
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      images.forEach((image) => URL.revokeObjectURL(image.url));
+    });
+
+    translate();
+  </script>
+</body>
+</html>
